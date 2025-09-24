@@ -778,18 +778,16 @@
             <button class="save-pdf-btn" onclick="saveToPDF()">Download Results as PDF</button>
         </div>
 
-        <div id="results" class="results">
-            <h2 style="text-align: center; color: #2c5aa0;">Your Club's Risk Assessment Results</h2>
-            <div id="riskLevel" class="risk-level"></div>
-            <div class="recommendation-box">
-                <h3>What This Means for Your Club</h3>
-                <div id="riskDetails"></div>
-            </div>
-            <div class="recommendation-box">
-                <h3>Immediate Next Steps</h3>
-                <div id="recommendations"></div>
-            </div>
-
+        <div class="results" aria-hidden="true">
+            <!--
+                This hidden duplicate results block previously used identical IDs
+                (results, riskLevel, riskDetails, recommendations). Having multiple
+                elements with the same ID breaks DOM lookups used by the scoring
+                logic – the browser only returns the first match, so the visible
+                section never updated. We keep a semantic placeholder for layout
+                consistency but remove the conflicting IDs to ensure the script
+                targets the primary results container above.
+            -->
         </div>
     </div>
 
