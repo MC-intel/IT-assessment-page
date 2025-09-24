@@ -1039,25 +1039,36 @@
 
                 const { PDFDocument, rgb, StandardFonts } = PDFLib;
 
-                const templateResponse = await fetch('Golf Assessment Results Background .pdf');
+                const templateResponse = await fetch('Golf%20Assessment%20Results%20Background%20.pdf');
                 if (!templateResponse.ok) {
                     throw new Error('Unable to load template PDF');
                 }
                 const templateBytes = await templateResponse.arrayBuffer();
 
-                const pdfDoc = await PDFDocument.load(templateBytes);
+                const pdfDoc = await PDFDocument.create();
+                const [templateBackground] = await pdfDoc.embedPdf(templateBytes);
                 const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
                 const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-                const pages = pdfDoc.getPages();
-                let currentPage = pages[0];
-                const pageWidth = currentPage.getWidth();
-                const pageHeight = currentPage.getHeight();
+                const pageWidth = templateBackground.width;
+                const pageHeight = templateBackground.height;
                 const topMarginFirstPage = 140;
                 const topMargin = 70;
                 const bottomMargin = 50;
                 const contentWidth = pageWidth - 120;
 
+                const addPageWithTemplate = () => {
+                    const page = pdfDoc.addPage([pageWidth, pageHeight]);
+                    page.drawPage(templateBackground, {
+                        x: 0,
+                        y: 0,
+                        width: pageWidth,
+                        height: pageHeight
+                    });
+                    return page;
+                };
+
+                let currentPage = addPageWithTemplate();
                 let yOffset = topMarginFirstPage;
 
                 const riskColors = {
@@ -1076,7 +1087,7 @@
 
                 const ensureSpace = (lineHeight = 18) => {
                     if (yOffset + lineHeight > pageHeight - bottomMargin) {
-                        currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+                        currentPage = addPageWithTemplate();
                         yOffset = topMargin;
                     }
                 };
@@ -1174,7 +1185,7 @@
                 drawLine({ text: `Unsure Answers: ${unsureCount}/${questions.length}`, x: 80 });
                 drawLine({ text: `Not Applicable: ${naCount}/${questions.length}`, x: 80 });
 
-                currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+                currentPage = addPageWithTemplate();
                 yOffset = topMargin;
 
                 drawCentered({ text: 'Assessment Questions & Responses', size: 16 });
@@ -1200,7 +1211,7 @@
                     yOffset += 6;
                 });
 
-                currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+                currentPage = addPageWithTemplate();
                 yOffset = topMargin;
 
                 drawLine({ text: 'Risk Analysis & Recommendations:', font: boldFont, size: 14, lineHeight: 24 });
@@ -1212,19 +1223,6 @@
                 yOffset += 10;
                 drawLine({ text: 'Recommended Next Steps:', font: boldFont, size: 12, lineHeight: 22 });
                 drawParagraph(recsText, { font: regularFont, size: 12 });
-
-                const footerText = "Pearl Solutions Group | (636) 949-8850 | Your Club's Digital Caddie";
-                const allPages = pdfDoc.getPages();
-                allPages.forEach(page => {
-                    const textWidth = regularFont.widthOfTextAtSize(footerText, 8);
-                    page.drawText(footerText, {
-                        x: (page.getWidth() - textWidth) / 2,
-                        y: 30,
-                        size: 8,
-                        font: regularFont,
-                        color: rgb(0, 0, 0)
-                    });
-                });
 
                 const pdfBytes = await pdfDoc.save();
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
