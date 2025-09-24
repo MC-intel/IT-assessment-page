@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golf Club Cybersecurity & IT Initial Assessment - Pearl Solutions Group</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3c72 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3c72 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+        
+        .pearl-brand {
+            font-size: 1em;
+            font-weight: 500;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 20px;
+            border-radius: 25px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .intro {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2c5aa0;
+        }
+        
+        .intro h3 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        
+        .assessment-section {
+            margin-bottom: 35px;
+        }
+        
+        .section-title {
+            color: #2c5aa0;
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .question {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            transition: all 0.3s ease;
+        }
+        
+        .question:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .question-text {
+            font-size: 1.05em;
+            margin-bottom: 15px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .question-number {
+            color: #2c5aa0;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .radio-label {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .radio-label input[type="radio"] {
+            margin-right: 8px;
+            cursor: pointer;
+            transform: scale(1.2);
+        }
+        
+        .yes-label {
+            color: #28a745;
+        }
+        
+        .no-label {
+            color: #dc3545;
+        }
+        
+        .unsure-label {
+            color: #6c757d;
+        }
+        
+        .na-label {
+            color: #17a2b8;
+        }
+        
+        .score-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .calculate-btn {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 10px;
+        }
+
+   
+
+
+
+        .calculate-btn:hover {
+            background: #1e3c72;
+        }
+        
+        .save-pdf-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 10px;
+            display: none;
+        }
+        
+        .save-pdf-btn:hover {
+            background: #218838;
+        }
+        
+        .results {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .risk-level {
+            font-size: 1.5em;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .risk-low {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+        
+        .risk-medium {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+        
+        .risk-high {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+        
+        .risk-critical {
+            background: #f5c6cb;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+        
+        .recommendation-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .recommendation-box h3 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+        }
+        
+        .cta-section {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3c72 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .cta-button {
+            background: #28a745;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            text-decoration: none;
+            display: inline-block;
+            margin: 20px 10px;
+            transition: background-color 0.3s;
+        }
+        
+        .cta-button:hover {
+            background: #218838;
+            text-decoration: none;
+            color: white;
+        }
+        
+        .detailed-assessment {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .detailed-assessment h4 {
+            margin-bottom: 10px;
+        }
+
+
+
+
+        .personal-info-form {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 8px;
+            border-left: 4px solid #1976d2;
+        }
+
+        .personal-info-form {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 2rem auto;
+            font-family: Arial, sans-serif;
+        }
+
+            .personal-info-form h3 {
+                margin-bottom: 0.5rem;
+                font-size: 1.5rem;
+                text-align: center;
+                color: #333;
+            }
+
+            .personal-info-form p {
+                margin-bottom: 1.5rem;
+                text-align: center;
+                color: #666;
+            }
+
+            .personal-info-form .form-group {
+                margin-bottom: 1rem;
+            }
+
+            .personal-info-form label {
+                display: block;
+                margin-bottom: 0.4rem;
+                font-weight: 600;
+                color: #444;
+            }
+
+            .personal-info-form input {
+                width: 100%;
+                padding: 0.6rem;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                font-size: 1rem;
+                transition: border-color 0.2s ease-in-out;
+            }
+
+                .personal-info-form input:focus {
+                    border-color: #007bff;
+                    outline: none;
+                }
+
+            .personal-info-form button {
+                width: 100%;
+                padding: 0.8rem;
+                border: none;
+                border-radius: 8px;
+                background: #007bff;
+                color: white;
+                font-size: 1rem;
+                font-weight: bold;
+                cursor: pointer;
+                transition: background 0.3s ease;
+                margin-top: 0.5rem;
+            }
+
+                .personal-info-form button:hover {
+                    background: #0056b3;
+                }
+
+
+        .disclaimer {
+            font-size: 0.9em;
+            color: #666;
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .content {
+                padding: 30px 20px;
+            }
+            
+            .radio-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Golf Club Cybersecurity & IT Initial Assessment</h1>
+            <p>Discover your club's technology risks in just 5 minutes</p>
+            <div class="pearl-brand">Pearl Solutions Group - Your Club's Digital Caddie</div>
+        </div>
+
+        <div class="content">
+            <div class="intro">
+                <h3>Protect Your Club's Legacy</h3>
+                <p>Golf clubs face unique cybersecurity challenges - from PCI compliance across multiple payment locations to protecting high-value member data. This initial assessment will identify your most critical vulnerabilities and provide immediate action steps.</p>
+                <p><strong>Time to complete:</strong> 3-5 minutes | <strong>Results:</strong> Instant risk analysis with recommendations</p>
+            </div>
+
+            <div class="intro" style="background: #fff3cd; border-left: 4px solid #ffc107; margin-bottom: 30px;">
+                <h3 style="color: #856404; margin-bottom: 10px;">⚠️ 63% of golf clubs admit they're vulnerable to cyberattacks - Where does your club stand?</h3>
+                <p style="color: #856404; margin-bottom: 0;">Find out if your club is properly protected in just 5 minutes.</p>
+            </div>
+
+            <form id="assessmentForm">
+                <div class="assessment-section">
+                    <div class="section-title">Payment & Compliance Security</div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">1.</span>
+                            Do you process credit cards anywhere in your club (pro shop, restaurant, beverage carts, etc.)?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q1" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q1" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q1" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q1" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">2.</span>
+                            Are you PCI DSS compliant across all payment locations?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q2" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q2" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q2" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q2" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-section">
+                    <div class="section-title">Data Protection & Backup</div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">3.</span>
+                            Are your data backups tested monthly, encrypted, and stored both onsite and offsite with at least one air-gapped copy?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q3" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q3" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q3" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q3" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">4.</span>
+                            Do you have a tested plan for getting back online quickly if ransomware locks all your systems?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q4" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q4" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q4" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q4" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-section">
+                    <div class="section-title">Network & System Security</div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">5.</span>
+                            Is your network properly segmented with firewalls separating member systems, staff systems, and guest WiFi?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q5" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q5" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q5" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q5" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">6.</span>
+                            Are all your servers, workstations, and network equipment under warranty with a documented hardware refresh cycle?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q6" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q6" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q6" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q6" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-section">
+                    <div class="section-title">Access Control & Privacy</div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">7.</span>
+                            Is access removed immediately when employees leave?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q7" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q7" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q7" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q7" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">8.</span>
+                            Do you audit user access quarterly and remove unnecessary permissions?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q8" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q8" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q8" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q8" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">9.</span>
+                            Do you have documented policies for member data collection, storage, and privacy rights?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q9" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q9" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q9" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q9" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-section">
+                    <div class="section-title">Security Monitoring & Training</div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">10.</span>
+                            Do you have 24/7 security monitoring with immediate threat response?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q10" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q10" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q10" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q10" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">11.</span>
+                            Do all staff receive annual cybersecurity training with simulated phishing tests?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q11" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q11" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q11" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q11" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-section">
+                    <div class="section-title">Business Continuity</div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">12.</span>
+                            Do you have redundant internet connections that automatically switch during outages?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q12" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q12" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q12" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q12" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="question">
+                        <div class="question-text">
+                            <span class="question-number">13.</span>
+                            Do you have a disaster response team with clear roles and communication protocols?
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-label yes-label">
+                                <input type="radio" name="q13" value="yes"> Yes
+                            </label>
+                            <label class="radio-label no-label">
+                                <input type="radio" name="q13" value="no"> No
+                            </label>
+                            <label class="radio-label unsure-label">
+                                <input type="radio" name="q13" value="unsure"> Unsure
+                            </label>
+                            <label class="radio-label na-label">
+                                <input type="radio" name="q13" value="na"> N/A
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+
+            <br>
+
+            <div class="personal-info-form">
+
+                <h3>Get Your Full Report</h3>
+                <p>Fill out before calculating your risk score! </p>
+
+                <form id="personalInfoForm">
+                    <div class="form-group">
+                        <label for="firstName">First Name*</label>
+                        <input type="text" id="firstName" name="firstName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastName">Last Name*</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email*</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="clubname">Club Name*</label>
+                        <input type="text" id="clubname" name="clubname" required>
+                    </div>
+
+                    <p class="disclaimer">
+                        This assessment provides general guidance per industry standards. We recommend a consultation for a comprehensive security audit.
+                    </p>
+
+                </form>
+            </div>
+
+
+
+            <div id="results" class="results">
+                <h2>Your Risk Assessment Results</h2>
+                <div id="riskLevel" class="risk-level"></div>
+                <div class="recommendation-box">
+                    <div id="riskDetails"></div>
+                    <div id="recommendations"></div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+        <div class="score-section">
+            <button class="calculate-btn" onclick="calculateScore()">Get My Risk Assessment</button>
+            <button class="save-pdf-btn" onclick="saveToPDF()">Download Results as PDF</button>
+        </div>
+
+        <div id="results" class="results">
+            <h2 style="text-align: center; color: #2c5aa0;">Your Club's Risk Assessment Results</h2>
+            <div id="riskLevel" class="risk-level"></div>
+            <div class="recommendation-box">
+                <h3>What This Means for Your Club</h3>
+                <div id="riskDetails"></div>
+            </div>
+            <div class="recommendation-box">
+                <h3>Immediate Next Steps</h3>
+                <div id="recommendations"></div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+        
+
+
+
+
+    <script>
+
+
+        // Capture form data globally
+        let formData = {};
+
+        // Disable Calculate button by default
+        const calcBtn = document.querySelector(".calculate-btn");
+        calcBtn.disabled = true;
+
+        // Watch inputs in the form
+        const requiredFields = [
+            document.getElementById("firstName"),
+            document.getElementById("lastName"),
+            document.getElementById("email"),
+            document.getElementById("clubname")
+        ];
+
+        function checkFormCompletion() {
+            const allFilled = requiredFields.every(input => input.value.trim() !== "");
+            calcBtn.disabled = !allFilled;
+        }
+
+        // Listen for typing/changes in the form
+        requiredFields.forEach(input => {
+            input.addEventListener("input", checkFormCompletion);
+        });
+
+        // When clicking Calculate, also capture form data
+        calcBtn.addEventListener("click", function () {
+            formData = {
+                firstName: document.getElementById("firstName").value.trim(),
+                lastName: document.getElementById("lastName").value.trim(),
+                email: document.getElementById("email").value.trim(),
+                clubName: document.getElementById("clubname").value.trim()
+            };
+
+            calculateScore();
+        });
+
+
+        function calculateScore() {
+            const form = document.getElementById('assessmentForm');
+            const formData = new FormData(form);
+
+            let yesCount = 0;
+            let noCount = 0;
+            let unsureCount = 0;
+            let naCount = 0;
+            let totalQuestions = 13;
+            let answeredQuestions = 0;
+            let applicableQuestions = 0; // Questions that aren't N/A
+
+            // Count responses
+            for (let i = 1; i <= totalQuestions; i++) {
+                const answer = formData.get(`q${i}`);
+                if (answer) {
+                    answeredQuestions++;
+                    if (answer === 'yes') {
+                        yesCount++;
+                        applicableQuestions++;
+                    } else if (answer === 'no') {
+                        noCount++;
+                        applicableQuestions++;
+                    } else if (answer === 'unsure') {
+                        unsureCount++;
+                        applicableQuestions++;
+                    } else if (answer === 'na') {
+                        naCount++;
+                    }
+                }
+            }
+
+            // Check if all questions answered
+            if (answeredQuestions < totalQuestions) {
+                alert('Please answer all questions to get your risk assessment.');
+                return;
+            }
+
+            // Show results section
+            document.getElementById('results').style.display = 'block';
+            document.querySelector('.save-pdf-btn').style.display = 'inline-block';
+
+            // Calculate percentage of "Yes" answers from applicable questions only
+            const yesPercentage = applicableQuestions > 0 ? (yesCount / applicableQuestions) * 100 : 0;
+            const noPercentage = applicableQuestions > 0 ? (noCount / applicableQuestions) * 100 : 0;
+
+            let riskLevel, riskClass, details, recommendations;
+
+            // Determine risk level based on scoring (excluding N/A from calculation)
+            if (applicableQuestions === 0) {
+                riskLevel = "Assessment Not Applicable";
+                riskClass = "risk-medium";
+                details = `
+                        <p>All questions were marked as "Not Applicable" to your club's situation.</p>
+                        <p>This suggests your club may have a unique setup that requires individual consultation.</p>
+                    `;
+                recommendations = `
+                        <ul>
+                            <li>Schedule a personalized consultation to discuss your specific needs</li>
+                            <li>Consider our comprehensive assessment with golf club specialists</li>
+                            <li>Ensure you're not overlooking any applicable security measures</li>
+                        </ul>
+                    `;
+            } else if (yesPercentage >= 85) { // 85%+ yes answers from applicable questions
+                riskLevel = "LOW RISK - Well Protected";
+                riskClass = "risk-low";
+                details = `
+                        <p><strong>Excellent work!</strong> Your club scores ${yesCount} out of ${applicableQuestions} applicable security measures (${yesPercentage.toFixed(0)}%).</p>
+                        <p>You have strong foundational security controls in place. However, cybersecurity requires constant vigilance as threats evolve daily.</p>
+                        <p><strong>Key strengths:</strong> Your club demonstrates commitment to security best practices and compliance requirements.</p>
+                        ${naCount > 0 ? `<p><em>Note: ${naCount} questions were marked as not applicable to your club.</em></p>` : ''}
+                    `;
+                recommendations = `
+                        <ul>
+                            <li>Continue quarterly security reviews to maintain your strong posture</li>
+                            <li>Stay current with emerging threats targeting golf clubs</li>
+                            <li>Consider our detailed assessment to identify optimization opportunities</li>
+                            <li>Ensure your cyber insurance policy reflects your security investments</li>
+                        </ul>
+                    `;
+            } else if (yesPercentage >= 62) { // 62-84% yes answers from applicable questions
+                riskLevel = "MODERATE RISK - Some Gaps";
+                riskClass = "risk-medium";
+                details = `
+                        <p>Your club has ${yesCount} out of ${applicableQuestions} applicable security measures in place (${yesPercentage.toFixed(0)}%), but significant gaps remain.</p>
+                        <p><strong>Current exposure:</strong> The missing controls could lead to costly compliance violations, member data breaches, or operational disruptions.</p>
+                        <p>Golf clubs with similar scores have experienced average breach costs of <strong>$1.2 million</strong> and member trust issues.</p>
+                        ${naCount > 0 ? `<p><em>Note: ${naCount} questions were marked as not applicable to your club.</em></p>` : ''}
+                    `;
+                recommendations = `
+                        <ul>
+                            <li><strong>Priority 1:</strong> Address PCI compliance gaps immediately (fines start at $5,000/month)</li>
+                            <li><strong>Priority 2:</strong> Implement proper backup testing and disaster recovery</li>
+                            <li><strong>Priority 3:</strong> Establish 24/7 security monitoring</li>
+                            <li>Schedule a comprehensive security assessment within 30 days</li>
+                        </ul>
+                    `;
+            } else if (yesPercentage >= 38) { // 38-61% yes answers from applicable questions
+                riskLevel = "HIGH RISK - Immediate Action Required";
+                riskClass = "risk-high";
+                details = `
+                        <p><strong>Warning:</strong> Your club has only ${yesCount} out of ${applicableQuestions} applicable security controls (${yesPercentage.toFixed(0)}%).</p>
+                        <p><strong>Significant exposure:</strong> You're vulnerable to ransomware, data breaches, compliance violations, and operational outages.</p>
+                        <p>Clubs with similar risk profiles face average breach costs of <strong>$2.1 million</strong> and potential member lawsuits.</p>
+                        <p><strong>Insurance impact:</strong> Your cyber insurance may not pay claims without proper security measures.</p>
+                        ${naCount > 0 ? `<p><em>Note: ${naCount} questions were marked as not applicable to your club.</em></p>` : ''}
+                    `;
+                recommendations = `
+                        <ul>
+                            <li><strong>URGENT:</strong> Schedule emergency security consultation within 7 days</li>
+                            <li><strong>URGENT:</strong> Verify PCI compliance status across all payment locations</li>
+                            <li><strong>URGENT:</strong> Test and verify all data backups immediately</li>
+                            <li>Implement staff security training before next payroll cycle</li>
+                            <li>Review cyber insurance policy requirements</li>
+                        </ul>
+                    `;
+            } else { // Less than 38% yes answers from applicable questions
+                riskLevel = "CRITICAL RISK - Club in Danger";
+                riskClass = "risk-critical";
+                details = `
+                        <p><strong>CRITICAL ALERT:</strong> Your club has only ${yesCount} out of ${applicableQuestions} essential applicable security controls (${yesPercentage.toFixed(0)}%).</p>
+                        <p><strong>Extreme vulnerability:</strong> Your club is at severe risk of devastating cyberattacks, compliance violations, and operational shutdown.</p>
+                        <p>Without immediate action, you face potential breach costs exceeding <strong>$3.7 million</strong>, member lawsuits, and regulatory penalties.</p>
+                        <p><strong>Board liability:</strong> Directors may face personal legal exposure for inadequate cybersecurity governance.</p>
+                        ${naCount > 0 ? `<p><em>Note: ${naCount} questions were marked as not applicable to your club.</em></p>` : ''}
+                    `;
+                recommendations = `
+                        <ul>
+                            <li><strong>EMERGENCY ACTION:</strong> Call Pearl Solutions Group immediately: (636) 949-8850</li>
+                            <li><strong>TODAY:</strong> Disconnect non-essential systems from the internet</li>
+                            <li><strong>TODAY:</strong> Verify backup systems are functional</li>
+                            <li><strong>THIS WEEK:</strong> Emergency security assessment and remediation plan</li>
+                            <li><strong>THIS WEEK:</strong> Board emergency meeting to address cyber risk</li>
+                            <li>Consider temporary operational modifications until security is improved</li>
+                        </ul>
+                    `;
+            }
+
+            // Display results
+            document.getElementById('riskLevel').innerHTML = riskLevel;
+            document.getElementById('riskLevel').className = `risk-level ${riskClass}`;
+            document.getElementById('riskDetails').innerHTML = details;
+            document.getElementById('recommendations').innerHTML = recommendations;
+
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function saveToPDF() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            const today = new Date().toLocaleDateString();
+
+            // ---------- COVER PAGE ----------
+            let y = 20;
+
+            // Title
+            pdf.setFontSize(18);
+            pdf.text('Golf Club Cybersecurity Initial Assessment Results', 105, y, { align: 'center' });
+
+            y += 10;
+            pdf.setFontSize(12);
+            pdf.text("Pearl Solutions Group - Your Club's Digital Caddie", 105, y, { align: 'center' });
+
+            y += 10;
+            pdf.text(`Assessment Date: ${today}`, 105, y, { align: 'center' });
+
+            // Client Info
+            y += 20;
+            pdf.setFontSize(12);
+            pdf.text(`Prepared For: ${formData.firstName} ${formData.lastName}`, 20, y);
+
+            y += 7;
+            pdf.text(`Email: ${formData.email}`, 20, y);
+
+            // Risk Level
+            const riskLevel = document.getElementById('riskLevel').textContent;
+            y += 20;
+            pdf.setFontSize(16);
+            pdf.text(`Risk Level: ${riskLevel}`, 20, y);
+
+            // Collect answers
+            let yesCount = 0, noCount = 0, unsureCount = 0, naCount = 0;
+            let answers = [];
+
+            const questions = [
+                'Do you process credit cards anywhere in your club (pro shop, restaurant, beverage carts, etc.)?',
+                'Are you PCI DSS compliant across all payment locations?',
+                'Are your data backups tested monthly, encrypted, and stored both onsite and offsite with at least one air-gapped copy?',
+                'Do you have a tested plan for getting back online quickly if ransomware locks all your systems?',
+                'Is your network properly segmented with firewalls separating member systems, staff systems, and guest WiFi?',
+                'Are all your servers, workstations, and network equipment under warranty with a documented hardware refresh cycle?',
+                'Is access removed immediately when employees leave?',
+                'Do you audit user access quarterly and remove unnecessary permissions?',
+                'Do you have documented policies for member data collection, storage, and privacy rights?',
+                'Do you have 24/7 security monitoring with immediate threat response?',
+                'Do all staff receive annual cybersecurity training with simulated phishing tests?',
+                'Do you have redundant internet connections that automatically switch during outages?',
+                'Do you have a disaster response team with clear roles and communication protocols?'
+            ];
+
+            for (let i = 1; i <= 13; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if (selected) {
+                    answers.push(selected.value);
+                    if (selected.value === 'yes') yesCount++;
+                    else if (selected.value === 'no') noCount++;
+                    else if (selected.value === 'unsure') unsureCount++;
+                    else if (selected.value === 'na') naCount++;
+                } else {
+                    answers.push('Not Answered');
+                }
+            }
+
+            // Summary
+            y += 20;
+            pdf.setFontSize(14);
+            pdf.text('Initial Assessment Summary:', 20, y);
+
+            y += 10;
+            pdf.setFontSize(12);
+            pdf.text(`Yes Answers: ${yesCount}/13`, 30, y);
+
+            y += 7;
+            pdf.text(`No Answers: ${noCount}/13`, 30, y);
+
+            y += 7;
+            pdf.text(`Unsure Answers: ${unsureCount}/13`, 30, y);
+
+            y += 7;
+            pdf.text(`Not Applicable: ${naCount}/13`, 30, y);
+
+            // ---------- QUESTIONS & ANSWERS ----------
+            pdf.addPage();
+            pdf.setFontSize(16);
+            pdf.text('Assessment Questions & Responses', 105, 20, { align: 'center' });
+
+            y = 35;
+            pdf.setFontSize(10);
+
+            questions.forEach((question, index) => {
+                if (y > 270) {
+                    pdf.addPage();
+                    y = 20;
+                }
+
+                // Question
+                const questionLines = pdf.splitTextToSize(`${index + 1}. ${question}`, 170);
+                questionLines.forEach(line => {
+                    pdf.text(line, 20, y);
+                    y += 5;
+                });
+
+                // Answer with color coding
+                const answer = answers[index];
+                if (answer === 'yes') {
+                    pdf.setTextColor(0, 128, 0); // Green
+                } else if (answer === 'no') {
+                    pdf.setTextColor(255, 0, 0); // Red
+                } else if (answer === 'na') {
+                    pdf.setTextColor(23, 162, 184); // Teal
+                } else {
+                    pdf.setTextColor(128, 128, 128); // Gray
+                }
+
+                pdf.text(`Answer: ${answer.toUpperCase()}`, 30, y);
+                pdf.setTextColor(0, 0, 0); // Reset to black
+                y += 10;
+            });
+
+            // ---------- RISK ASSESSMENT ----------
+            pdf.addPage();
+            pdf.setFontSize(14);
+            pdf.text('Risk Analysis & Recommendations:', 20, 20);
+
+            const riskText = document.getElementById('riskLevel').innerText;
+            const detailsText = document.getElementById('riskDetails').innerText;
+            const recsText = document.getElementById('recommendations').innerText;
+
+            pdf.setFontSize(12);
+            const riskLines = pdf.splitTextToSize(`Risk Level: ${riskText}`, 170);
+            y = 35;
+            riskLines.forEach(line => {
+                pdf.text(line, 20, y);
+                y += 7;
+            });
+
+            y += 5;
+            const detailLines = pdf.splitTextToSize(detailsText, 170);
+            detailLines.forEach(line => {
+                if (y > 280) {
+                    pdf.addPage();
+                    y = 20;
+                }
+                pdf.text(line, 20, y);
+                y += 7;
+            });
+
+            y += 10;
+            pdf.text('Recommended Next Steps:', 20, y);
+            y += 10;
+            const recLines = pdf.splitTextToSize(recsText, 170);
+            recLines.forEach(line => {
+                if (y > 280) {
+                    pdf.addPage();
+                    y = 20;
+                }
+                pdf.text(line, 20, y);
+                y += 7;
+            });
+
+            // ---------- FOOTER ----------
+            const totalPages = pdf.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                pdf.setPage(i);
+                pdf.setFontSize(8);
+                pdf.text("Pearl Solutions Group | (636) 949-8850 | Your Club's Digital Caddie", 105, 290, { align: 'center' });
+            }
+
+            pdf.save('Golf-Club-Security-Assessment-Results.pdf');
+        }
+
+    </script>
+</body>
+</html>
