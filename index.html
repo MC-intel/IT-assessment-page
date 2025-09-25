@@ -1039,7 +1039,12 @@
 
                 const { PDFDocument, rgb, StandardFonts } = PDFLib;
 
+                // Local link -
                 const templateResponse = await fetch('Golf%20Assessment%20Results%20Background%20.pdf');
+
+                // Wordpress link -
+            //    const templateResponse = await fetch('https://pearlsolves.com/wp-content/uploads/2025/09/Golf-Assessment-Results-Background-.pdf');
+  
                 if (!templateResponse.ok) {
                     throw new Error('Unable to load template PDF');
                 }
