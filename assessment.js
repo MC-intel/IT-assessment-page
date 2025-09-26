@@ -53,10 +53,27 @@
           body: JSON.stringify(payload)
         });
 
+        const status = response.status;
+        const contentLengthHeader = response.headers.get('Content-Length');
+        const hasBody = status !== 204 && contentLengthHeader !== '0';
+
         if (!response.ok) {
-          console.error('HubSpot submission failed', await response.text());
-        } else {
+          const rawText = hasBody ? await response.text() : '';
+          console.error('HubSpot submission failed', rawText || `Status ${status}`);
+          return;
+        }
+
+        if (!hasBody) {
+          console.log('HubSpot submission success: No content returned.');
+          return;
+        }
+
+        const contentType = response.headers.get('Content-Type') || '';
+
+        if (contentType.includes('application/json')) {
           console.log('HubSpot submission success:', await response.json());
+        } else {
+          console.log('HubSpot submission success (non-JSON response):', await response.text());
         }
       } catch (err) {
         console.error('Error sending to HubSpot', err);
