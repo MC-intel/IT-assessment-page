@@ -14,7 +14,7 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #2c5aa0 0%, #1e3c72 100%);
+            background: none;
             color: #333;
             line-height: 1.6;
             min-height: 100vh;
@@ -172,9 +172,15 @@
             margin: 10px;
         }
 
-   
+        .calculate-btn:disabled {
+            background: #d6d6d6;
+            color: #7a7a7a;
+            cursor: not-allowed;
+        }
 
-
+        .calculate-btn:disabled:hover {
+            background: #d6d6d6;
+        }
 
         .calculate-btn:hover {
             background: #1e3c72;
