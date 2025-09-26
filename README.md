@@ -20,7 +20,7 @@ The script exposes `calculateScore` and `saveToPDF` on `window` for backwards co
 
 - `index.html` – reference implementation of the assessment page.
 - `assessment.js` – standalone JavaScript module with HubSpot integration.
-- `Golf Assessment Results Background .pdf` – PDF template used when exporting results.
+- `golf-assessment-results-background.pdf` – PDF template used when exporting results.
 
 ## Development Notes
 

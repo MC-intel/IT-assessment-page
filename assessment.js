@@ -305,7 +305,7 @@
           throw new Error('PDFLib failed to load.');
         }
 
-        const templateResponse = await fetch('Golf%20Assessment%20Results%20Background%20.pdf');
+        const templateResponse = await fetch('golf-assessment-results-background.pdf');
         if (!templateResponse.ok) {
           throw new Error('Unable to load template PDF');
         }
