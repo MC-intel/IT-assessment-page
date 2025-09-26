@@ -1,5 +1,5 @@
 (function () {
-  document.addEventListener('DOMContentLoaded', () => {
+
     const calcBtn = document.querySelector('.calculate-btn');
     const savePdfBtn = document.querySelector('.save-pdf-btn');
     const requiredFields = [
@@ -510,5 +510,5 @@
 
     window.calculateScore = calculateScore;
     window.saveToPDF = saveToPDF;
-  });
+
 })();
