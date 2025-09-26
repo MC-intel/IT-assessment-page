@@ -491,15 +491,26 @@
       }
     };
 
+    const hasCalcBtnInlineHandler = Boolean(
+      calcBtn && (calcBtn.hasAttribute('onclick') || typeof calcBtn.onclick === 'function')
+    );
+
+    const hasSaveBtnInlineHandler = Boolean(
+      savePdfBtn && (savePdfBtn.hasAttribute('onclick') || typeof savePdfBtn.onclick === 'function')
+    );
+
     if (calcBtn) {
       calcBtn.disabled = true;
-      calcBtn.addEventListener('click', event => {
-        event.preventDefault();
-        calculateScore();
-      });
+
+      if (!hasCalcBtnInlineHandler) {
+        calcBtn.addEventListener('click', event => {
+          event.preventDefault();
+          calculateScore();
+        });
+      }
     }
 
-    if (savePdfBtn) {
+    if (savePdfBtn && !hasSaveBtnInlineHandler) {
       savePdfBtn.addEventListener('click', event => {
         event.preventDefault();
         saveToPDF();
