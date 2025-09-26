@@ -1,9 +1,4 @@
 (function () {
-  const initAssessmentApp = () => {
-    if (initAssessmentApp.initialized) {
-      return;
-    }
-    initAssessmentApp.initialized = true;
 
     const calcBtn = document.querySelector('.calculate-btn');
     const savePdfBtn = document.querySelector('.save-pdf-btn');
@@ -515,16 +510,5 @@
 
     window.calculateScore = calculateScore;
     window.saveToPDF = saveToPDF;
-  };
 
-  if (typeof window !== 'undefined') {
-    window.PearlAssessment = window.PearlAssessment || {};
-    window.PearlAssessment.init = initAssessmentApp;
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAssessmentApp, { once: true });
-  } else {
-    initAssessmentApp();
-  }
 })();
