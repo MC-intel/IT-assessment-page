@@ -80,6 +80,31 @@
       }
     };
 
+    const uploadAssessmentPdf = async ({ participant, riskLevelText, pdfBase64, answersBreakdown }) => {
+      const endpoint = '/api/upload-assessment-report';
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participant,
+            riskLevel: riskLevelText,
+            pdfBase64,
+            answers: answersBreakdown,
+            filename: 'Golf-Club-Security-Assessment-Results.pdf'
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          console.error('Failed to upload assessment PDF', response.status, errorText);
+        }
+      } catch (error) {
+        console.error('Error uploading assessment PDF', error);
+      }
+    };
+
     const calculateScore = async () => {
       const assessmentForm = document.getElementById('assessmentForm');
       if (!assessmentForm) {
@@ -307,32 +332,52 @@
           throw new Error('PDFLib failed to load.');
         }
 
-        const templateResponse = await fetch('golf-assessment-results-background.pdf');
-        if (!templateResponse.ok) {
-          throw new Error('Unable to load template PDF');
-        }
-        const templateBytes = await templateResponse.arrayBuffer();
-
         const pdfDoc = await PDFDocument.create();
-        const [templateBackground] = await pdfDoc.embedPdf(templateBytes);
+
+        let templateBackground;
+        let pageWidth = 612;
+        let pageHeight = 792;
+
+        try {
+          const templateResponse = await fetch('golf-assessment-results-background.pdf');
+          if (!templateResponse.ok) {
+            throw new Error(`Template fetch failed with status ${templateResponse.status}`);
+          }
+          const templateBytes = await templateResponse.arrayBuffer();
+          [templateBackground] = await pdfDoc.embedPdf(templateBytes);
+          pageWidth = templateBackground.width;
+          pageHeight = templateBackground.height;
+        } catch (templateError) {
+          console.warn('Unable to load template PDF. Falling back to a simplified layout.', templateError);
+        }
+
         const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-        const pageWidth = templateBackground.width;
-        const pageHeight = templateBackground.height;
-        const topMarginFirstPage = 140;
-        const topMargin = 70;
+        const topMarginFirstPage = templateBackground ? 140 : 72;
+        const topMargin = templateBackground ? 70 : 60;
         const bottomMargin = 50;
         const contentWidth = pageWidth - 120;
 
         const addPageWithTemplate = () => {
           const page = pdfDoc.addPage([pageWidth, pageHeight]);
-          page.drawPage(templateBackground, {
-            x: 0,
-            y: 0,
-            width: pageWidth,
-            height: pageHeight
-          });
+          if (templateBackground) {
+            page.drawPage(templateBackground, {
+              x: 0,
+              y: 0,
+              width: pageWidth,
+              height: pageHeight
+            });
+          } else {
+            page.drawRectangle({
+              x: 36,
+              y: 36,
+              width: pageWidth - 72,
+              height: pageHeight - 72,
+              borderColor: rgb(0.8, 0.8, 0.8),
+              borderWidth: 1
+            });
+          }
           return page;
         };
 
@@ -493,6 +538,34 @@
         drawParagraph(recsText, { font: regularFont, size: 12 });
 
         const pdfBytes = await pdfDoc.save();
+
+        const encodeToBase64 = bytes => {
+          const chunkSize = 0x8000;
+          const uint8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+          let binary = '';
+
+          for (let i = 0; i < uint8.length; i += chunkSize) {
+            const chunk = uint8.subarray(i, i + chunkSize);
+            binary += String.fromCharCode.apply(null, chunk);
+          }
+
+          return btoa(binary);
+        };
+
+        const pdfBase64 = encodeToBase64(pdfBytes);
+
+        await uploadAssessmentPdf({
+          participant,
+          riskLevelText,
+          pdfBase64,
+          answersBreakdown: {
+            yes: yesCount,
+            no: noCount,
+            unsure: unsureCount,
+            na: naCount
+          }
+        });
+
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
 
