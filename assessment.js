@@ -80,6 +80,31 @@
       }
     };
 
+    const uploadAssessmentPdf = async ({ participant, riskLevelText, pdfBase64, answersBreakdown }) => {
+      const endpoint = '/api/upload-assessment-report';
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participant,
+            riskLevel: riskLevelText,
+            pdfBase64,
+            answers: answersBreakdown,
+            filename: 'Golf-Club-Security-Assessment-Results.pdf'
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          console.error('Failed to upload assessment PDF', response.status, errorText);
+        }
+      } catch (error) {
+        console.error('Error uploading assessment PDF', error);
+      }
+    };
+
     const calculateScore = async () => {
       const assessmentForm = document.getElementById('assessmentForm');
       if (!assessmentForm) {
@@ -513,6 +538,7 @@
         drawParagraph(recsText, { font: regularFont, size: 12 });
 
         const pdfBytes = await pdfDoc.save();
+
 
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
