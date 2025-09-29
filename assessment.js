@@ -80,6 +80,31 @@
       }
     };
 
+    const uploadAssessmentPdf = async ({ participant, riskLevelText, pdfBase64, answersBreakdown }) => {
+      const endpoint = '/api/upload-assessment-report';
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participant,
+            riskLevel: riskLevelText,
+            pdfBase64,
+            answers: answersBreakdown,
+            filename: 'Golf-Club-Security-Assessment-Results.pdf'
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          console.error('Failed to upload assessment PDF', response.status, errorText);
+        }
+      } catch (error) {
+        console.error('Error uploading assessment PDF', error);
+      }
+    };
+
     const calculateScore = async () => {
       const assessmentForm = document.getElementById('assessmentForm');
       if (!assessmentForm) {
@@ -493,6 +518,34 @@
         drawParagraph(recsText, { font: regularFont, size: 12 });
 
         const pdfBytes = await pdfDoc.save();
+
+        const encodeToBase64 = bytes => {
+          const chunkSize = 0x8000;
+          const uint8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+          let binary = '';
+
+          for (let i = 0; i < uint8.length; i += chunkSize) {
+            const chunk = uint8.subarray(i, i + chunkSize);
+            binary += String.fromCharCode.apply(null, chunk);
+          }
+
+          return btoa(binary);
+        };
+
+        const pdfBase64 = encodeToBase64(pdfBytes);
+
+        await uploadAssessmentPdf({
+          participant,
+          riskLevelText,
+          pdfBase64,
+          answersBreakdown: {
+            yes: yesCount,
+            no: noCount,
+            unsure: unsureCount,
+            na: naCount
+          }
+        });
+
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
 
