@@ -332,32 +332,52 @@
           throw new Error('PDFLib failed to load.');
         }
 
-        const templateResponse = await fetch('golf-assessment-results-background.pdf');
-        if (!templateResponse.ok) {
-          throw new Error('Unable to load template PDF');
-        }
-        const templateBytes = await templateResponse.arrayBuffer();
-
         const pdfDoc = await PDFDocument.create();
-        const [templateBackground] = await pdfDoc.embedPdf(templateBytes);
+
+        let templateBackground;
+        let pageWidth = 612;
+        let pageHeight = 792;
+
+        try {
+          const templateResponse = await fetch('golf-assessment-results-background.pdf');
+          if (!templateResponse.ok) {
+            throw new Error(`Template fetch failed with status ${templateResponse.status}`);
+          }
+          const templateBytes = await templateResponse.arrayBuffer();
+          [templateBackground] = await pdfDoc.embedPdf(templateBytes);
+          pageWidth = templateBackground.width;
+          pageHeight = templateBackground.height;
+        } catch (templateError) {
+          console.warn('Unable to load template PDF. Falling back to a simplified layout.', templateError);
+        }
+
         const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-        const pageWidth = templateBackground.width;
-        const pageHeight = templateBackground.height;
-        const topMarginFirstPage = 140;
-        const topMargin = 70;
+        const topMarginFirstPage = templateBackground ? 140 : 72;
+        const topMargin = templateBackground ? 70 : 60;
         const bottomMargin = 50;
         const contentWidth = pageWidth - 120;
 
         const addPageWithTemplate = () => {
           const page = pdfDoc.addPage([pageWidth, pageHeight]);
-          page.drawPage(templateBackground, {
-            x: 0,
-            y: 0,
-            width: pageWidth,
-            height: pageHeight
-          });
+          if (templateBackground) {
+            page.drawPage(templateBackground, {
+              x: 0,
+              y: 0,
+              width: pageWidth,
+              height: pageHeight
+            });
+          } else {
+            page.drawRectangle({
+              x: 36,
+              y: 36,
+              width: pageWidth - 72,
+              height: pageHeight - 72,
+              borderColor: rgb(0.8, 0.8, 0.8),
+              borderWidth: 1
+            });
+          }
           return page;
         };
 
