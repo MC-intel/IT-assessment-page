@@ -80,7 +80,7 @@
       }
     };
 
-    const calculateScore = () => {
+    const calculateScore = async () => {
       const assessmentForm = document.getElementById('assessmentForm');
       if (!assessmentForm) {
         return;
@@ -243,6 +243,10 @@
       if (resultsContainer) {
         resultsContainer.scrollIntoView({ behavior: 'smooth' });
       }
+
+      const participant = captureParticipant();
+      const riskLevelText = riskLevel;
+      await sendToHubSpot(participant, riskLevelText);
     };
 
     const saveToPDF = async () => {
@@ -255,8 +259,6 @@
         }
 
         const riskLevelText = riskLevelEl.innerText.trim();
-
-        await sendToHubSpot(participant, riskLevelText);
 
         const questions = [
           'Do you process credit cards anywhere in your club (pro shop, restaurant, beverage carts, etc.)?',
@@ -520,9 +522,9 @@
       calcBtn.disabled = true;
 
       if (!hasCalcBtnInlineHandler) {
-        calcBtn.addEventListener('click', event => {
+        calcBtn.addEventListener('click', async event => {
           event.preventDefault();
-          calculateScore();
+          await calculateScore();
         });
       }
     }
