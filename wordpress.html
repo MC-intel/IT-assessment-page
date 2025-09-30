@@ -887,7 +887,7 @@
       }
     };
 
-    const calculateScore = () => {
+    const calculateScore = async () => {
       const assessmentForm = document.getElementById('assessmentForm');
       if (!assessmentForm) {
         return;
@@ -1050,6 +1050,18 @@
       if (resultsContainer) {
         resultsContainer.scrollIntoView({ behavior: 'smooth' });
       }
+
+      try {
+        const participant = captureParticipant();
+        if (participant.firstName && participant.lastName && participant.email && participant.clubName) {
+          const riskLevelText = riskLevelEl ? riskLevelEl.innerText.trim() : riskLevel;
+          await sendToHubSpot(participant, riskLevelText);
+        } else {
+          console.warn('Participant information incomplete; skipping HubSpot submission.');
+        }
+      } catch (err) {
+        console.error('Error sending assessment results to HubSpot', err);
+      }
     };
 
     const saveToPDF = async () => {
@@ -1062,8 +1074,6 @@
         }
 
         const riskLevelText = riskLevelEl.innerText.trim();
-
-        await sendToHubSpot(participant, riskLevelText);
 
         const questions = [
           'Do you process credit cards anywhere in your club (pro shop, restaurant, beverage carts, etc.)?',
