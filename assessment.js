@@ -344,14 +344,6 @@
           }
 
           const templateBytes = await templateResponse.arrayBuffer();
-          const templateDoc = await PDFDocument.load(templateBytes);
-          const [embeddedTemplate] = await pdfDoc.embedPages(templateDoc, [0]);
-          templateBackground = embeddedTemplate;
-        } catch (error) {
-          console.warn('Unable to load golf assessment background template, continuing without it.', error);
-        }
-        const pageWidth = 612;
-        const pageHeight = 792;
 
         const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
