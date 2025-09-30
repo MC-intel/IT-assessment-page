@@ -334,7 +334,22 @@
 
         const pdfDoc = await PDFDocument.create();
 
-        const templateBackground = null;
+        const pdfTemplateUrl = 'https://pearlsolves.com/wp-content/uploads/2025/09/Golf-Assessment-Results-Background-.pdf';
+        let templateBackground = null;
+
+        try {
+          const templateResponse = await fetch(pdfTemplateUrl, { mode: 'cors' });
+          if (!templateResponse.ok) {
+            throw new Error(`Template fetch failed with status ${templateResponse.status}`);
+          }
+
+          const templateBytes = await templateResponse.arrayBuffer();
+          const templateDoc = await PDFDocument.load(templateBytes);
+          const [embeddedTemplate] = await pdfDoc.embedPages(templateDoc, [0]);
+          templateBackground = embeddedTemplate;
+        } catch (error) {
+          console.warn('Unable to load golf assessment background template, continuing without it.', error);
+        }
         const pageWidth = 612;
         const pageHeight = 792;
 
