@@ -876,6 +876,22 @@
       return window.btoa(binary);
     };
 
+    const preparePdfPayload = async (participant, riskLevelText) => {
+      const snapshot = getAssessmentSnapshot(participant, riskLevelText);
+      const { pdfBytes, signature } = await generateAssessmentPdfBytes(snapshot);
+
+      if (!latestPdfBase64Cache) {
+        latestPdfBase64Cache = arrayBufferToBase64(pdfBytes);
+      }
+
+      return {
+        pdfBytes,
+        signature,
+        base64: latestPdfBase64Cache,
+        fileName: RESULTS_PDF_FILE_NAME
+      };
+    };
+
     const getAssessmentSnapshot = (participantOverride, riskLevelOverride) => {
       const participant = participantOverride || captureParticipant();
       const riskLevelEl = document.getElementById('riskLevel');
@@ -1381,20 +1397,12 @@
 
           let pdfAttachment = null;
           try {
-            const snapshot = getAssessmentSnapshot(participant, riskLevelText);
-            const { pdfBytes, signature } = await generateAssessmentPdfBytes(snapshot);
+            const pdfPayload = await preparePdfPayload(participant, riskLevelText);
 
-            let pdfBase64 = latestPdfBase64Cache;
-            if (!pdfBase64 || signature !== latestPdfSignature) {
-              pdfBase64 = arrayBufferToBase64(pdfBytes);
-              latestPdfBase64Cache = pdfBase64;
-              latestPdfSignature = signature;
-            }
-
-            if (pdfBase64) {
+            if (pdfPayload.base64) {
               pdfAttachment = {
-                base64: pdfBase64,
-                fileName: RESULTS_PDF_FILE_NAME
+                base64: pdfPayload.base64,
+                fileName: pdfPayload.fileName
               };
             }
           } catch (pdfError) {
@@ -1420,20 +1428,18 @@
 
         const participant = captureParticipant();
         const riskLevelText = riskLevelEl.innerText.trim();
-        const snapshot = getAssessmentSnapshot(participant, riskLevelText);
-        const { pdfBytes, signature } = await generateAssessmentPdfBytes(snapshot);
+        const pdfPayload = await preparePdfPayload(participant, riskLevelText);
 
-        if (!latestPdfBase64Cache || signature !== latestPdfSignature) {
-          latestPdfBase64Cache = arrayBufferToBase64(pdfBytes);
-          latestPdfSignature = signature;
+        if (!pdfPayload.pdfBytes || !pdfPayload.pdfBytes.length) {
+          throw new Error('PDF data unavailable.');
         }
 
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const blob = new Blob([pdfPayload.pdfBytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
 
         const link = document.createElement('a');
         link.href = url;
-        link.download = RESULTS_PDF_FILE_NAME;
+        link.download = pdfPayload.fileName || RESULTS_PDF_FILE_NAME;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
