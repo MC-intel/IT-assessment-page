@@ -334,9 +334,29 @@
 
         const pdfDoc = await PDFDocument.create();
 
-        const templateBackground = null;
-        const pageWidth = 612;
-        const pageHeight = 792;
+        const pdfTemplateUrl = 'https://pearlsolves.com/wp-content/uploads/2025/09/Golf-Assessment-Results-Background-.pdf';
+        let templateBackground = null;
+        let templateDimensions = null;
+
+        try {
+          const templateResponse = await fetch(pdfTemplateUrl, { mode: 'cors' });
+          if (!templateResponse.ok) {
+            throw new Error(`Template fetch failed with status ${templateResponse.status}`);
+          }
+
+          const templateBytes = await templateResponse.arrayBuffer();
+          const [embeddedTemplate] = await pdfDoc.embedPdf(templateBytes);
+          templateBackground = embeddedTemplate;
+          const { width, height } = embeddedTemplate;
+          if (typeof width === 'number' && typeof height === 'number' && width > 0 && height > 0) {
+            templateDimensions = { width, height };
+          }
+        } catch (error) {
+          console.warn('Unable to load golf assessment background template, continuing without it.', error);
+        }
+        const defaultDimensions = { width: 612, height: 792 };
+        const pageWidth = templateDimensions ? templateDimensions.width : defaultDimensions.width;
+        const pageHeight = templateDimensions ? templateDimensions.height : defaultDimensions.height;
 
         const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
