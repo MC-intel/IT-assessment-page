@@ -334,22 +334,9 @@
 
         const pdfDoc = await PDFDocument.create();
 
-        let templateBackground;
-        let pageWidth = 612;
-        let pageHeight = 792;
-
-        try {
-          const templateResponse = await fetch('golf-assessment-results-background.pdf');
-          if (!templateResponse.ok) {
-            throw new Error(`Template fetch failed with status ${templateResponse.status}`);
-          }
-          const templateBytes = await templateResponse.arrayBuffer();
-          [templateBackground] = await pdfDoc.embedPdf(templateBytes);
-          pageWidth = templateBackground.width;
-          pageHeight = templateBackground.height;
-        } catch (templateError) {
-          console.warn('Unable to load template PDF. Falling back to a simplified layout.', templateError);
-        }
+        const templateBackground = null;
+        const pageWidth = 612;
+        const pageHeight = 792;
 
         const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
