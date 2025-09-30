@@ -173,14 +173,16 @@
             margin: 10px;
         }
 
-   
-
-
+        .calculate-btn:disabled {
+            background: #b0b0b0;
+            cursor: not-allowed;
+            color: #f1f1f1;
+        }
 
         .calculate-btn:hover {
             background: #1e3c72;
         }
-        
+
         .save-pdf-btn {
             background: #28a745;
             color: white;
@@ -776,7 +778,7 @@
 
 
         <div class="score-section">
-            <button class="calculate-btn" onclick="calculateScore()">Get My Risk Assessment</button>
+            <button class="calculate-btn" onclick="calculateScore()" disabled>Get My Risk Assessment</button>
             <button class="save-pdf-btn" onclick="saveToPDF()">Download Results as PDF</button>
         </div>
 
@@ -833,6 +835,7 @@
       }
     });
 
+    checkFormCompletion();
     const sendToHubSpot = async (participant, riskLevelText) => {
       const url = 'https://api.hsforms.com/submissions/v3/integration/submit/1959814/4861c8c2-4019-4bd8-9a4c-b1218c87d392';
 
