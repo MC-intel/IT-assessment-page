@@ -836,6 +836,23 @@
     });
 
     checkFormCompletion();
+
+    const getHubSpotUtk = () => {
+      const cookies = (document.cookie || '').split(';');
+      const entry = cookies.find(cookie => cookie.trim().startsWith('hubspotutk='));
+      if (!entry) {
+        return undefined;
+      }
+
+      const value = entry.trim().slice('hubspotutk='.length);
+      try {
+        return decodeURIComponent(value);
+      } catch (err) {
+        console.warn('Failed to decode hubspotutk cookie', err);
+        return undefined;
+      }
+    };
+
     const sendToHubSpot = async (participant, riskLevelText) => {
       const url = 'https://api.hsforms.com/submissions/v3/integration/submit/1959814/4861c8c2-4019-4bd8-9a4c-b1218c87d392';
 
@@ -852,6 +869,11 @@
           pageName: document.title
         }
       };
+
+      const hubSpotUtk = getHubSpotUtk();
+      if (hubSpotUtk) {
+        payload.context.hutk = hubSpotUtk;
+      }
 
       try {
         const response = await fetch(url, {
