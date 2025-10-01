@@ -832,6 +832,7 @@
     ];
 
     const HUBSPOT_CLUB_FIELD = 'club_name';
+    const HUBSPOT_COMPANY_NAME_FIELD = 'name';
     const HUBSPOT_RISK_LEVEL_FIELD = 'it_assessment_risk_level';
     const HUBSPOT_RESULTS_PDF_FIELD = 'asssessment_results';
     const PDF_TEMPLATE_URL = 'https://pearlsolves.com/wp-content/uploads/2025/09/Golf-Assessment-Results-Background-.pdf';
@@ -846,7 +847,7 @@
       firstName: document.getElementById('firstName').value.trim(),
       lastName: document.getElementById('lastName').value.trim(),
       email: document.getElementById('email').value.trim(),
-      clubName: document.getElementById('clubname').value.trim()
+      name: document.getElementById('clubname').value.trim()
     });
 
     const checkFormCompletion = () => {
@@ -1099,7 +1100,7 @@
       yOffset += 10;
       drawLine({ text: `Prepared For: ${snapshot.participant.firstName} ${snapshot.participant.lastName}` });
       drawLine({ text: `Email: ${snapshot.participant.email}` });
-      drawLine({ text: `Club / Organization: ${snapshot.participant.clubName}` });
+      drawLine({ text: `Club / Organization: ${snapshot.participant.name}` });
 
       yOffset += 10;
       drawLine({
@@ -1183,8 +1184,8 @@
         { name: 'firstname', value: participant.firstName, objectTypeId: '0-1' },
         { name: 'lastname', value: participant.lastName, objectTypeId: '0-1' },
         { name: 'email', value: participant.email, objectTypeId: '0-1' },
-        { name: HUBSPOT_CLUB_FIELD, value: participant.clubName, objectTypeId: '0-1' },
-        { name: 'name', value: participant.clubName, objectTypeId: '0-2' },
+        { name: HUBSPOT_CLUB_FIELD, value: participant.name, objectTypeId: '0-1' },
+        { name: HUBSPOT_COMPANY_NAME_FIELD, value: participant.name, objectTypeId: '0-2' },
         { name: HUBSPOT_RISK_LEVEL_FIELD, value: riskLevelText, objectTypeId: '0-1' }
       ];
 
@@ -1430,7 +1431,7 @@
 
       try {
         const participant = captureParticipant();
-        if (participant.firstName && participant.lastName && participant.email && participant.clubName) {
+        if (participant.firstName && participant.lastName && participant.email && participant.name) {
           const riskLevelText = riskLevelEl ? riskLevelEl.innerText.trim() : riskLevel;
 
           let pdfAttachment = null;

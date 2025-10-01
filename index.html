@@ -833,7 +833,7 @@
                 firstName: document.getElementById("firstName").value.trim(),
                 lastName: document.getElementById("lastName").value.trim(),
                 email: document.getElementById("email").value.trim(),
-                clubName: document.getElementById("clubname").value.trim()
+                name: document.getElementById("clubname").value.trim()
             };
 
             calculateScore();
@@ -994,7 +994,7 @@
                     firstName: document.getElementById('firstName').value.trim(),
                     lastName: document.getElementById('lastName').value.trim(),
                     email: document.getElementById('email').value.trim(),
-                    clubName: document.getElementById('clubname').value.trim()
+                    name: document.getElementById('clubname').value.trim()
                 };
 
                 const questions = [
@@ -1173,7 +1173,7 @@
                 yOffset += 10;
                 drawLine({ text: `Prepared For: ${participant.firstName} ${participant.lastName}` });
                 drawLine({ text: `Email: ${participant.email}` });
-                drawLine({ text: `Club / Organization: ${participant.clubName}` });
+                drawLine({ text: `Club / Organization: ${participant.name}` });
 
                 yOffset += 10;
                 drawLine({
