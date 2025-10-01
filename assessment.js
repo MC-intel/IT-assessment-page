@@ -10,7 +10,7 @@
     ];
 
     const HUBSPOT_CLUB_FIELD = 'club_name';
-    const HUBSPOT_COMPANY_CLUB_FIELD = 'clubname';
+
     const HUBSPOT_RISK_LEVEL_FIELD = 'it_assessment_risk_level';
     const HUBSPOT_RESULTS_PDF_FIELD = 'asssessment_results';
 
@@ -18,7 +18,7 @@
       firstName: document.getElementById('firstName').value.trim(),
       lastName: document.getElementById('lastName').value.trim(),
       email: document.getElementById('email').value.trim(),
-      clubName: document.getElementById('clubname').value.trim()
+      name: document.getElementById('clubname').value.trim()
     });
 
     const checkFormCompletion = () => {
@@ -50,8 +50,7 @@
         { name: 'firstname', value: participant.firstName, objectTypeId: '0-1' },
         { name: 'lastname', value: participant.lastName, objectTypeId: '0-1' },
         { name: 'email', value: participant.email, objectTypeId: '0-1' },
-        { name: HUBSPOT_CLUB_FIELD, value: participant.clubName, objectTypeId: '0-1' },
-        { name: HUBSPOT_COMPANY_CLUB_FIELD, value: participant.clubName, objectTypeId: '0-2' },
+
         { name: HUBSPOT_RISK_LEVEL_FIELD, value: riskLevelText, objectTypeId: '0-1' }
       ];
 
@@ -514,7 +513,7 @@
         yOffset += 10;
         drawLine({ text: `Prepared For: ${participant.firstName} ${participant.lastName}` });
         drawLine({ text: `Email: ${participant.email}` });
-        drawLine({ text: `Club / Organization: ${participant.clubName}` });
+        drawLine({ text: `Club / Organization: ${participant.name}` });
 
         yOffset += 10;
         drawLine({

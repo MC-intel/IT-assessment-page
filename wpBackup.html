@@ -823,7 +823,7 @@
       firstName: document.getElementById('firstName').value.trim(),
       lastName: document.getElementById('lastName').value.trim(),
       email: document.getElementById('email').value.trim(),
-      clubName: document.getElementById('clubname').value.trim()
+      name: document.getElementById('clubname').value.trim()
     });
 
     const checkFormCompletion = () => {
@@ -846,7 +846,7 @@
         { name: 'firstname', value: participant.firstName },
         { name: 'lastname', value: participant.lastName },
         { name: 'email', value: participant.email },
-        { name: HUBSPOT_CLUB_FIELD, value: participant.clubName },
+        { name: HUBSPOT_CLUB_FIELD, value: participant.name },
         { name: HUBSPOT_RISK_LEVEL_FIELD, value: riskLevelText }
       ];
 
@@ -1076,7 +1076,7 @@
 
       try {
         const participant = captureParticipant();
-        if (participant.firstName && participant.lastName && participant.email && participant.clubName) {
+        if (participant.firstName && participant.lastName && participant.email && participant.name) {
           const riskLevelText = riskLevelEl ? riskLevelEl.innerText.trim() : riskLevel;
           await sendToHubSpot(participant, riskLevelText);
         } else {
@@ -1273,7 +1273,7 @@
         yOffset += 10;
         drawLine({ text: `Prepared For: ${participant.firstName} ${participant.lastName}` });
         drawLine({ text: `Email: ${participant.email}` });
-        drawLine({ text: `Club / Organization: ${participant.clubName}` });
+        drawLine({ text: `Club / Organization: ${participant.name}` });
 
         yOffset += 10;
         drawLine({
