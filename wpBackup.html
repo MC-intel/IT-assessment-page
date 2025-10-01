@@ -837,21 +837,7 @@
 
     checkFormCompletion();
 
-    const HUBSPOT_DEFAULT_OBJECT_TYPE_ID = '0-1';
 
-    const buildHubSpotFields = (participant, riskLevelText) => {
-      const rawFields = [
-        { name: 'firstname', value: participant.firstName, objectTypeId: '0-1' },
-        { name: 'lastname', value: participant.lastName, objectTypeId: '0-1' },
-        { name: 'email', value: participant.email, objectTypeId: '0-1' },
-        { name: 'clubname', value: participant.clubName, objectTypeId: '0-1' },
-        { name: 'risk_level', value: riskLevelText, objectTypeId: '0-1' }
-      ];
-
-      return rawFields
-        .filter(field => typeof field.value === 'string' && field.value.trim() !== '')
-        .map(field => ({
-          objectTypeId: field.objectTypeId || HUBSPOT_DEFAULT_OBJECT_TYPE_ID,
           name: field.name,
           value: field.value.trim()
         }));
@@ -868,6 +854,7 @@
           pageName: document.title
         }
       };
+
 
       if (payload.fields.length === 0) {
         console.warn('HubSpot submission skipped: No valid fields to submit.');

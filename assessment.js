@@ -30,8 +30,29 @@
     });
 
     const getHubSpotUtk = () => {
-
+      if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
+        return null;
       }
+
+      const match = document.cookie.match(/(?:^|; )hubspotutk=([^;]+)/);
+      return match ? decodeURIComponent(match[1]) : null;
+    };
+
+    const buildHubSpotFields = (participant, riskLevelText) => {
+      const rawFields = [
+        { name: 'firstname', value: participant.firstName },
+        { name: 'lastname', value: participant.lastName },
+        { name: 'email', value: participant.email },
+        { name: 'clubname', value: participant.clubName },
+        { name: 'risk_level', value: riskLevelText }
+      ];
+
+      return rawFields
+        .filter(field => typeof field.value === 'string' && field.value.trim() !== '')
+        .map(field => ({
+          name: field.name,
+          value: field.value.trim()
+        }));
     };
 
     const HUBSPOT_DEFAULT_OBJECT_TYPE_ID = '0-1';
