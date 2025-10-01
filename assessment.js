@@ -30,19 +30,7 @@
     });
 
     const getHubSpotUtk = () => {
-      if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
-        return undefined;
-      }
 
-      const match = document.cookie.match(/(?:^|;\s*)hubspotutk=([^;]+)/);
-      if (!match || !match[1]) {
-        return undefined;
-      }
-
-      try {
-        return decodeURIComponent(match[1]);
-      } catch (err) {
-        return undefined;
       }
     };
 
