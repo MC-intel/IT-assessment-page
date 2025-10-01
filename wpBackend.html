@@ -836,6 +836,7 @@
     const HUBSPOT_RISK_LEVEL_FIELD = 'it_assessment_risk_level';
     const HUBSPOT_RESULTS_PDF_FIELD = 'asssessment_results';
     const HUBSPOT_DEFAULT_OBJECT_TYPE_ID = '0-1';
+    const HUBSPOT_COMPANY_OBJECT_TYPE_ID = '0-2';
     const PDF_TEMPLATE_URL = 'https://pearlsolves.com/wp-content/uploads/2025/09/Golf-Assessment-Results-Background-.pdf';
     const RESULTS_PDF_FILE_NAME = 'Golf-Club-Security-Assessment-Results.pdf';
 
@@ -1186,6 +1187,14 @@
 
         { name: HUBSPOT_RISK_LEVEL_FIELD, value: riskLevelText, objectTypeId: HUBSPOT_DEFAULT_OBJECT_TYPE_ID }
       ];
+
+      if (participant.name && participant.name.trim() !== '') {
+        rawFields.push({
+          name: HUBSPOT_CLUB_FIELD,
+          value: participant.name,
+          objectTypeId: HUBSPOT_COMPANY_OBJECT_TYPE_ID
+        });
+      }
 
       return rawFields
         .filter(field => typeof field.value === 'string' && field.value.trim() !== '')
