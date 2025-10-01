@@ -1222,10 +1222,10 @@
       if (pdfAttachment && pdfAttachment.base64) {
         payload.files = [
           {
-            name: HUBSPOT_RESULTS_PDF_FIELD,
+            field: HUBSPOT_RESULTS_PDF_FIELD,
             fileName: pdfAttachment.fileName || RESULTS_PDF_FILE_NAME,
             content: pdfAttachment.base64,
-            mimeType: 'application/pdf'
+            type: 'application/pdf'
           }
         ];
       }
