@@ -1166,21 +1166,7 @@
     checkFormCompletion();
 
     const getHubSpotUtk = () => {
-      if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
-        return undefined;
-      }
 
-      const match = document.cookie.match(/(?:^|;\s*)hubspotutk=([^;]+)/);
-      if (!match || !match[1]) {
-        return undefined;
-      }
-
-      const rawValue = match[1];
-      try {
-        return decodeURIComponent(rawValue);
-      } catch (err) {
-        console.warn('Failed to decode hubspotutk cookie', err);
-        return rawValue;
       }
     };
 
