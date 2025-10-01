@@ -54,6 +54,10 @@
         { name: HUBSPOT_RISK_LEVEL_FIELD, value: riskLevelText, objectTypeId: '0-1' }
       ];
 
+      if (typeof participant.name === 'string' && participant.name.trim() !== '') {
+        rawFields.push({ name: HUBSPOT_CLUB_FIELD, value: participant.name, objectTypeId: '0-2' });
+      }
+
       return rawFields
         .filter(field => typeof field.value === 'string' && field.value.trim() !== '')
         .map(field => ({
