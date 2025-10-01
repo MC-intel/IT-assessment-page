@@ -1166,21 +1166,37 @@
     checkFormCompletion();
 
     const getHubSpotUtk = () => {
-
+      if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
+        return null;
       }
+
+      const match = document.cookie.match(/(?:^|; )hubspotutk=([^;]+)/);
+      return match ? decodeURIComponent(match[1]) : null;
+    };
+
+    const buildHubSpotFields = (participant, riskLevelText) => {
+      const rawFields = [
+        { name: 'firstname', value: participant.firstName },
+        { name: 'lastname', value: participant.lastName },
+        { name: 'email', value: participant.email },
+        { name: 'clubname', value: participant.clubName },
+        { name: 'risk_level', value: riskLevelText }
+      ];
+
+      return rawFields
+        .filter(field => typeof field.value === 'string' && field.value.trim() !== '')
+        .map(field => ({
+          name: field.name,
+          value: field.value.trim()
+        }));
     };
 
     const sendToHubSpot = async (participant, riskLevelText, pdfAttachment) => {
       const url = 'https://api.hsforms.com/submissions/v3/integration/submit/1959814/4861c8c2-4019-4bd8-9a4c-b1218c87d392';
 
       const payload = {
-        fields: [
-          { name: 'firstname', value: participant.firstName },
-          { name: 'lastname', value: participant.lastName },
-          { name: 'email', value: participant.email },
-          { name: 'clubname', value: participant.clubName },
-          { name: 'risk_level', value: riskLevelText }
-        ],
+        submittedAt: Date.now(),
+        fields: buildHubSpotFields(participant, riskLevelText),
         context: {
           pageUri: window.location.href,
           pageName: document.title
@@ -1190,6 +1206,11 @@
       const hubSpotUtk = getHubSpotUtk();
       if (hubSpotUtk) {
         payload.context.hutk = hubSpotUtk;
+      }
+
+      if (payload.fields.length === 0) {
+        console.warn('HubSpot submission skipped: No valid fields to submit.');
+        return;
       }
 
       if (pdfAttachment && pdfAttachment.base64) {
