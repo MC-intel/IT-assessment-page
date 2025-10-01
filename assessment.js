@@ -9,6 +9,10 @@
       document.getElementById('clubname')
     ];
 
+    const HUBSPOT_CLUB_FIELD = 'club_name';
+    const HUBSPOT_RISK_LEVEL_FIELD = 'it_assessment_risk_level';
+    const HUBSPOT_RESULTS_PDF_FIELD = 'it_assessment_results_pdf';
+
     const captureParticipant = () => ({
       firstName: document.getElementById('firstName').value.trim(),
       lastName: document.getElementById('lastName').value.trim(),
@@ -38,23 +42,6 @@
       return match ? decodeURIComponent(match[1]) : null;
     };
 
-    const buildHubSpotFields = (participant, riskLevelText) => {
-      const rawFields = [
-        { name: 'firstname', value: participant.firstName },
-        { name: 'lastname', value: participant.lastName },
-        { name: 'email', value: participant.email },
-        { name: 'clubname', value: participant.clubName },
-        { name: 'risk_level', value: riskLevelText }
-      ];
-
-      return rawFields
-        .filter(field => typeof field.value === 'string' && field.value.trim() !== '')
-        .map(field => ({
-          name: field.name,
-          value: field.value.trim()
-        }));
-    };
-
     const HUBSPOT_DEFAULT_OBJECT_TYPE_ID = '0-1';
 
     const buildHubSpotFields = (participant, riskLevelText) => {
@@ -62,8 +49,8 @@
         { name: 'firstname', value: participant.firstName, objectTypeId: '0-1' },
         { name: 'lastname', value: participant.lastName, objectTypeId: '0-1' },
         { name: 'email', value: participant.email, objectTypeId: '0-1' },
-        { name: 'clubname', value: participant.clubName, objectTypeId: '0-1' },
-        { name: 'risk_level', value: riskLevelText, objectTypeId: '0-1' }
+        { name: HUBSPOT_CLUB_FIELD, value: participant.clubName, objectTypeId: '0-1' },
+        { name: HUBSPOT_RISK_LEVEL_FIELD, value: riskLevelText, objectTypeId: '0-1' }
       ];
 
       return rawFields

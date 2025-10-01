@@ -815,6 +815,10 @@
       document.getElementById('clubname')
     ];
 
+    const HUBSPOT_CLUB_FIELD = 'club_name';
+    const HUBSPOT_RISK_LEVEL_FIELD = 'it_assessment_risk_level';
+    const HUBSPOT_RESULTS_PDF_FIELD = 'it_assessment_results_pdf';
+
     const captureParticipant = () => ({
       firstName: document.getElementById('firstName').value.trim(),
       lastName: document.getElementById('lastName').value.trim(),
@@ -842,8 +846,8 @@
         { name: 'firstname', value: participant.firstName },
         { name: 'lastname', value: participant.lastName },
         { name: 'email', value: participant.email },
-        { name: 'clubname', value: participant.clubName },
-        { name: 'risk_level', value: riskLevelText }
+        { name: HUBSPOT_CLUB_FIELD, value: participant.clubName },
+        { name: HUBSPOT_RISK_LEVEL_FIELD, value: riskLevelText }
       ];
 
       return rawFields

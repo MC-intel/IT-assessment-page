@@ -834,6 +834,7 @@
     const HUBSPOT_CLUB_FIELD = 'club_name';
     const HUBSPOT_RISK_LEVEL_FIELD = 'it_assessment_risk_level';
     const HUBSPOT_RESULTS_PDF_FIELD = 'it_assessment_results_pdf';
+    const HUBSPOT_DEFAULT_OBJECT_TYPE_ID = '0-1';
     const PDF_TEMPLATE_URL = 'https://pearlsolves.com/wp-content/uploads/2025/09/Golf-Assessment-Results-Background-.pdf';
     const RESULTS_PDF_FILE_NAME = 'Golf-Club-Security-Assessment-Results.pdf';
 
@@ -1176,15 +1177,13 @@
       return match ? decodeURIComponent(match[1]) : null;
     };
 
-    const HUBSPOT_DEFAULT_OBJECT_TYPE_ID = '0-1';
-
     const buildHubSpotFields = (participant, riskLevelText) => {
       const rawFields = [
-        { name: 'firstname', value: participant.firstName, objectTypeId: '0-1' },
-        { name: 'lastname', value: participant.lastName, objectTypeId: '0-1' },
-        { name: 'email', value: participant.email, objectTypeId: '0-1' },
-        { name: HUBSPOT_CLUB_FIELD, value: participant.clubName, objectTypeId: '0-1' },
-        { name: HUBSPOT_RISK_LEVEL_FIELD, value: riskLevelText, objectTypeId: '0-1' }
+        { name: 'firstname', value: participant.firstName, objectTypeId: HUBSPOT_DEFAULT_OBJECT_TYPE_ID },
+        { name: 'lastname', value: participant.lastName, objectTypeId: HUBSPOT_DEFAULT_OBJECT_TYPE_ID },
+        { name: 'email', value: participant.email, objectTypeId: HUBSPOT_DEFAULT_OBJECT_TYPE_ID },
+        { name: HUBSPOT_CLUB_FIELD, value: participant.clubName, objectTypeId: HUBSPOT_DEFAULT_OBJECT_TYPE_ID },
+        { name: HUBSPOT_RISK_LEVEL_FIELD, value: riskLevelText, objectTypeId: HUBSPOT_DEFAULT_OBJECT_TYPE_ID }
       ];
 
       return rawFields
