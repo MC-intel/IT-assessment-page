@@ -29,6 +29,23 @@
       }
     });
 
+    const getHubSpotUtk = () => {
+      if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
+        return undefined;
+      }
+
+      const match = document.cookie.match(/(?:^|;\s*)hubspotutk=([^;]+)/);
+      if (!match || !match[1]) {
+        return undefined;
+      }
+
+      try {
+        return decodeURIComponent(match[1]);
+      } catch (err) {
+        return match[1];
+      }
+    };
+
     const sendToHubSpot = async (participant, riskLevelText) => {
       const url = 'https://api.hsforms.com/submissions/v3/integration/submit/1959814/4861c8c2-4019-4bd8-9a4c-b1218c87d392';
 
@@ -45,6 +62,11 @@
           pageName: document.title
         }
       };
+
+      const hubSpotUtk = getHubSpotUtk();
+      if (hubSpotUtk) {
+        payload.context.hutk = hubSpotUtk;
+      }
 
       try {
         const response = await fetch(url, {
