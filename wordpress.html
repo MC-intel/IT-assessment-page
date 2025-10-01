@@ -1170,17 +1170,32 @@
       }
     };
 
+    const HUBSPOT_DEFAULT_OBJECT_TYPE_ID = '0-1';
+
+    const buildHubSpotFields = (participant, riskLevelText) => {
+      const rawFields = [
+        { name: 'firstname', value: participant.firstName, objectTypeId: '0-1' },
+        { name: 'lastname', value: participant.lastName, objectTypeId: '0-1' },
+        { name: 'email', value: participant.email, objectTypeId: '0-1' },
+        { name: 'clubname', value: participant.clubName, objectTypeId: '0-1' },
+        { name: 'risk_level', value: riskLevelText, objectTypeId: '0-1' }
+      ];
+
+      return rawFields
+        .filter(field => typeof field.value === 'string' && field.value.trim() !== '')
+        .map(field => ({
+          objectTypeId: field.objectTypeId || HUBSPOT_DEFAULT_OBJECT_TYPE_ID,
+          name: field.name,
+          value: field.value.trim()
+        }));
+    };
+
     const sendToHubSpot = async (participant, riskLevelText, pdfAttachment) => {
       const url = 'https://api.hsforms.com/submissions/v3/integration/submit/1959814/4861c8c2-4019-4bd8-9a4c-b1218c87d392';
 
       const payload = {
-        fields: [
-          { name: 'firstname', value: participant.firstName },
-          { name: 'lastname', value: participant.lastName },
-          { name: 'email', value: participant.email },
-          { name: 'clubname', value: participant.clubName },
-          { name: 'risk_level', value: riskLevelText }
-        ],
+        submittedAt: Date.now(),
+        fields: buildHubSpotFields(participant, riskLevelText),
         context: {
           pageUri: window.location.href,
           pageName: document.title
@@ -1190,6 +1205,11 @@
       const hubSpotUtk = getHubSpotUtk();
       if (hubSpotUtk) {
         payload.context.hutk = hubSpotUtk;
+      }
+
+      if (payload.fields.length === 0) {
+        console.warn('HubSpot submission skipped: No valid fields to submit.');
+        return;
       }
 
       if (pdfAttachment && pdfAttachment.base64) {
