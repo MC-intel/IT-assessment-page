@@ -55,6 +55,26 @@
         }));
     };
 
+    const HUBSPOT_DEFAULT_OBJECT_TYPE_ID = '0-1';
+
+    const buildHubSpotFields = (participant, riskLevelText) => {
+      const rawFields = [
+        { name: 'firstname', value: participant.firstName, objectTypeId: '0-1' },
+        { name: 'lastname', value: participant.lastName, objectTypeId: '0-1' },
+        { name: 'email', value: participant.email, objectTypeId: '0-1' },
+        { name: 'clubname', value: participant.clubName, objectTypeId: '0-1' },
+        { name: 'risk_level', value: riskLevelText, objectTypeId: '0-1' }
+      ];
+
+      return rawFields
+        .filter(field => typeof field.value === 'string' && field.value.trim() !== '')
+        .map(field => ({
+          objectTypeId: field.objectTypeId || HUBSPOT_DEFAULT_OBJECT_TYPE_ID,
+          name: field.name,
+          value: field.value.trim()
+        }));
+    };
+
     const sendToHubSpot = async (participant, riskLevelText) => {
       const url = 'https://api.hsforms.com/submissions/v3/integration/submit/1959814/4861c8c2-4019-4bd8-9a4c-b1218c87d392';
 
