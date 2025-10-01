@@ -837,6 +837,8 @@
     const HUBSPOT_RESULTS_PDF_FIELD = 'asssessment_results';
     const HUBSPOT_DEFAULT_OBJECT_TYPE_ID = '0-1';
     const HUBSPOT_COMPANY_OBJECT_TYPE_ID = '0-2';
+    const DEFAULT_PDF_PAGE_WIDTH = 612;
+    const DEFAULT_PDF_PAGE_HEIGHT = 792;
     const PDF_TEMPLATE_URL = 'https://pearlsolves.com/wp-content/uploads/2025/09/Golf-Assessment-Results-Background-.pdf';
     const RESULTS_PDF_FILE_NAME = 'Golf-Club-Security-Assessment-Results.pdf';
 
@@ -844,6 +846,7 @@
     let latestPdfBytesCache = null;
     let latestPdfSignature = '';
     let latestPdfBase64Cache = '';
+    let templatePdfLoadFailed = false;
 
     const captureParticipant = () => ({
       firstName: document.getElementById('firstName').value.trim(),
@@ -972,21 +975,40 @@
         throw new Error('PDFLib failed to load.');
       }
 
-      if (!templatePdfBytesCache) {
-        const templateResponse = await fetch(PDF_TEMPLATE_URL);
-        if (!templateResponse.ok) {
-          throw new Error('Unable to load template PDF');
+      if (!templatePdfBytesCache && !templatePdfLoadFailed) {
+        try {
+          const templateResponse = await fetch(PDF_TEMPLATE_URL);
+          if (!templateResponse.ok) {
+            throw new Error('Unable to load template PDF');
+          }
+          templatePdfBytesCache = new Uint8Array(await templateResponse.arrayBuffer());
+        } catch (templateError) {
+          templatePdfLoadFailed = true;
+          console.warn('Assessment template PDF unavailable, generating results without background.', templateError);
         }
-        templatePdfBytesCache = new Uint8Array(await templateResponse.arrayBuffer());
       }
 
       const pdfDoc = await PDFDocument.create();
-      const [templateBackground] = await pdfDoc.embedPdf(templatePdfBytesCache);
+
+      let templateBackground = null;
+      let pageWidth = DEFAULT_PDF_PAGE_WIDTH;
+      let pageHeight = DEFAULT_PDF_PAGE_HEIGHT;
+
+      if (templatePdfBytesCache && templatePdfBytesCache.length) {
+        try {
+          [templateBackground] = await pdfDoc.embedPdf(templatePdfBytesCache);
+          pageWidth = templateBackground.width;
+          pageHeight = templateBackground.height;
+        } catch (embedError) {
+          templateBackground = null;
+          templatePdfLoadFailed = true;
+          console.warn('Failed to embed assessment template PDF, using blank page.', embedError);
+        }
+      }
+
       const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-      const pageWidth = templateBackground.width;
-      const pageHeight = templateBackground.height;
       const topMarginFirstPage = 140;
       const topMargin = 70;
       const bottomMargin = 50;
@@ -994,12 +1016,14 @@
 
       const addPageWithTemplate = () => {
         const page = pdfDoc.addPage([pageWidth, pageHeight]);
-        page.drawPage(templateBackground, {
-          x: 0,
-          y: 0,
-          width: pageWidth,
-          height: pageHeight
-        });
+        if (templateBackground) {
+          page.drawPage(templateBackground, {
+            x: 0,
+            y: 0,
+            width: pageWidth,
+            height: pageHeight
+          });
+        }
         return page;
       };
 
@@ -1180,29 +1204,37 @@
     };
 
     const buildHubSpotFields = (participant, riskLevelText) => {
-      const rawFields = [
-        { name: 'firstname', value: participant.firstName, objectTypeId: HUBSPOT_DEFAULT_OBJECT_TYPE_ID },
-        { name: 'lastname', value: participant.lastName, objectTypeId: HUBSPOT_DEFAULT_OBJECT_TYPE_ID },
-        { name: 'email', value: participant.email, objectTypeId: HUBSPOT_DEFAULT_OBJECT_TYPE_ID },
+      const fields = [];
 
-        { name: HUBSPOT_RISK_LEVEL_FIELD, value: riskLevelText, objectTypeId: HUBSPOT_DEFAULT_OBJECT_TYPE_ID }
-      ];
+      const pushField = (name, value, objectTypeId = HUBSPOT_DEFAULT_OBJECT_TYPE_ID) => {
+        if (typeof value !== 'string') {
+          return;
+        }
 
-      if (participant.name && participant.name.trim() !== '') {
-        rawFields.push({
-          name: HUBSPOT_CLUB_FIELD,
-          value: participant.name,
-          objectTypeId: HUBSPOT_COMPANY_OBJECT_TYPE_ID
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return;
+        }
+
+        fields.push({
+          objectTypeId,
+          name,
+          value: trimmed
         });
+      };
+
+      pushField('firstname', participant.firstName);
+      pushField('lastname', participant.lastName);
+      pushField('email', participant.email);
+      pushField(HUBSPOT_RISK_LEVEL_FIELD, riskLevelText);
+
+      if (participant.name && participant.name.trim()) {
+        pushField('name', participant.name, HUBSPOT_COMPANY_OBJECT_TYPE_ID);
+        pushField(HUBSPOT_CLUB_FIELD, participant.name, HUBSPOT_COMPANY_OBJECT_TYPE_ID);
+        pushField(HUBSPOT_CLUB_FIELD, participant.name, HUBSPOT_DEFAULT_OBJECT_TYPE_ID);
       }
 
-      return rawFields
-        .filter(field => typeof field.value === 'string' && field.value.trim() !== '')
-        .map(field => ({
-          objectTypeId: field.objectTypeId || HUBSPOT_DEFAULT_OBJECT_TYPE_ID,
-          name: field.name,
-          value: field.value.trim()
-        }));
+      return fields;
     };
 
     const sendToHubSpot = async (participant, riskLevelText, pdfAttachment) => {
