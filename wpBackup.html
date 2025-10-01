@@ -838,18 +838,7 @@
     checkFormCompletion();
 
     const getHubSpotUtk = () => {
-      const cookies = (document.cookie || '').split(';');
-      const entry = cookies.find(cookie => cookie.trim().startsWith('hubspotutk='));
-      if (!entry) {
-        return undefined;
-      }
 
-      const value = entry.trim().slice('hubspotutk='.length);
-      try {
-        return decodeURIComponent(value);
-      } catch (err) {
-        console.warn('Failed to decode hubspotutk cookie', err);
-        return undefined;
       }
     };
 
