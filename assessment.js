@@ -11,7 +11,7 @@
 
     const HUBSPOT_CLUB_FIELD = 'club_name';
     const HUBSPOT_RISK_LEVEL_FIELD = 'it_assessment_risk_level';
-    const HUBSPOT_RESULTS_PDF_FIELD = 'it_assessment_results_pdf';
+    const HUBSPOT_RESULTS_PDF_FIELD = 'asssessment_results';
 
     const captureParticipant = () => ({
       firstName: document.getElementById('firstName').value.trim(),
