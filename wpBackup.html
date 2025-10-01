@@ -837,7 +837,18 @@
 
     checkFormCompletion();
 
+    const buildHubSpotFields = (participant, riskLevelText) => {
+      const rawFields = [
+        { name: 'firstname', value: participant.firstName },
+        { name: 'lastname', value: participant.lastName },
+        { name: 'email', value: participant.email },
+        { name: 'clubname', value: participant.clubName },
+        { name: 'risk_level', value: riskLevelText }
+      ];
 
+      return rawFields
+        .filter(field => typeof field.value === 'string' && field.value.trim() !== '')
+        .map(field => ({
           name: field.name,
           value: field.value.trim()
         }));
