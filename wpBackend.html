@@ -848,12 +848,31 @@
     let latestPdfBase64Cache = '';
     let templatePdfLoadFailed = false;
 
-    const captureParticipant = () => ({
-      firstName: document.getElementById('firstName').value.trim(),
-      lastName: document.getElementById('lastName').value.trim(),
-      email: document.getElementById('email').value.trim(),
-      name: document.getElementById('clubname').value.trim()
-    });
+    const decodeHTMLEntities = (() => {
+      const textarea = document.createElement('textarea');
+      return text => {
+        if (typeof text !== 'string') {
+          return '';
+        }
+
+        textarea.innerHTML = text;
+        return textarea.value;
+      };
+    })();
+
+    const captureParticipant = () => {
+      const firstNameInput = document.getElementById('firstName');
+      const lastNameInput = document.getElementById('lastName');
+      const emailInput = document.getElementById('email');
+      const clubNameInput = document.getElementById('clubname');
+
+      return {
+        firstName: decodeHTMLEntities(((firstNameInput && firstNameInput.value) || '').trim()),
+        lastName: decodeHTMLEntities(((lastNameInput && lastNameInput.value) || '').trim()),
+        email: decodeHTMLEntities(((emailInput && emailInput.value) || '').trim()),
+        name: decodeHTMLEntities(((clubNameInput && clubNameInput.value) || '').trim())
+      };
+    };
 
     const checkFormCompletion = () => {
       const allFilled = requiredFields.every(input => input && input.value.trim() !== '');
@@ -901,9 +920,18 @@
     };
 
     const getAssessmentSnapshot = (participantOverride, riskLevelOverride) => {
-      const participant = participantOverride || captureParticipant();
+      const participant = participantOverride
+        ? {
+            firstName: decodeHTMLEntities((participantOverride.firstName || '').trim()),
+            lastName: decodeHTMLEntities((participantOverride.lastName || '').trim()),
+            email: decodeHTMLEntities((participantOverride.email || '').trim()),
+            name: decodeHTMLEntities((participantOverride.name || '').trim())
+          }
+        : captureParticipant();
       const riskLevelEl = document.getElementById('riskLevel');
-      const riskLevelText = riskLevelOverride || (riskLevelEl ? riskLevelEl.innerText.trim() : '');
+      const riskLevelText = decodeHTMLEntities(
+        (riskLevelOverride || (riskLevelEl ? riskLevelEl.innerText.trim() : ''))
+      );
 
       if (!riskLevelText) {
         throw new Error('Risk level not yet calculated.');
@@ -947,8 +975,8 @@
         noCount,
         unsureCount,
         naCount,
-        detailsText: detailsElement ? detailsElement.innerText : '',
-        recsText: recommendationsElement ? recommendationsElement.innerText : '',
+        detailsText: decodeHTMLEntities(detailsElement ? detailsElement.innerText : ''),
+        recsText: decodeHTMLEntities(recommendationsElement ? recommendationsElement.innerText : ''),
         today: new Date().toLocaleDateString()
       };
     };
@@ -1151,7 +1179,8 @@
       yOffset += 10;
 
       ASSESSMENT_QUESTIONS.forEach((question, index) => {
-        const questionLines = wrapText(`${index + 1}. ${question}`, contentWidth, regularFont, 11);
+        const decodedQuestion = decodeHTMLEntities(question);
+        const questionLines = wrapText(`${index + 1}. ${decodedQuestion}`, contentWidth, regularFont, 11);
         questionLines.forEach(line => {
           drawLine({ text: line, x: 60, font: regularFont, size: 11, lineHeight: 16 });
         });
@@ -1471,7 +1500,9 @@
       try {
         const participant = captureParticipant();
         if (participant.firstName && participant.lastName && participant.email && participant.name) {
-          const riskLevelText = riskLevelEl ? riskLevelEl.innerText.trim() : riskLevel;
+          const riskLevelText = decodeHTMLEntities(
+            riskLevelEl ? riskLevelEl.innerText.trim() : riskLevel
+          );
 
           let pdfAttachment = null;
           try {
@@ -1505,7 +1536,7 @@
         }
 
         const participant = captureParticipant();
-        const riskLevelText = riskLevelEl.innerText.trim();
+        const riskLevelText = decodeHTMLEntities(riskLevelEl.innerText.trim());
         const pdfPayload = await preparePdfPayload(participant, riskLevelText);
 
         if (!pdfPayload.pdfBytes || !pdfPayload.pdfBytes.length) {
