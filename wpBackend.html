@@ -839,7 +839,7 @@
     const HUBSPOT_COMPANY_OBJECT_TYPE_ID = '0-2';
     const DEFAULT_PDF_PAGE_WIDTH = 612;
     const DEFAULT_PDF_PAGE_HEIGHT = 792;
-    const PDF_TEMPLATE_URL = 'https://pearlsolves.com/wp-content/uploads/2025/09/Golf-Assessment-Results-Background-.pdf';
+    const DEFAULT_TEMPLATE_URL = 'https://pearlsolves.com/wp-content/uploads/2025/09/Golf-Assessment-Results-Background-.pdf';
     const RESULTS_PDF_FILE_NAME = 'Golf-Club-Security-Assessment-Results.pdf';
 
     let templatePdfBytesCache = null;
@@ -859,6 +859,151 @@
         return textarea.value;
       };
     })();
+
+    const decodeBase64ToUint8Array = base64 => {
+      if (typeof base64 !== 'string' || base64.trim() === '') {
+        throw new Error('PDF template response did not include base64 data.');
+      }
+
+      const sanitized = base64.replace(/\s+/g, '');
+      const atobFn = typeof atob === 'function'
+        ? atob
+        : (typeof window !== 'undefined' && typeof window.atob === 'function' ? window.atob : null);
+
+      if (!atobFn) {
+        throw new Error('Base64 decoding is not supported in this environment.');
+      }
+
+      const binaryString = atobFn(sanitized);
+      const length = binaryString.length;
+      const bytes = new Uint8Array(length);
+      for (let i = 0; i < length; i += 1) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    };
+
+    const getConfiguredTemplateSources = () => {
+      const sources = [];
+
+      const globalConfig = (typeof window !== 'undefined' && (window.PearlAssessmentConfig || window.PearlAssessment)) || {};
+      const configUrls = [];
+
+      if (globalConfig) {
+        if (Array.isArray(globalConfig.pdfTemplateUrls)) {
+          configUrls.push(...globalConfig.pdfTemplateUrls);
+        }
+        if (typeof globalConfig.pdfTemplateUrl === 'string') {
+          configUrls.push(globalConfig.pdfTemplateUrl);
+        }
+        if (globalConfig.config && typeof globalConfig.config.pdfTemplateUrl === 'string') {
+          configUrls.push(globalConfig.config.pdfTemplateUrl);
+        }
+        if (globalConfig.config && Array.isArray(globalConfig.config.pdfTemplateUrls)) {
+          configUrls.push(...globalConfig.config.pdfTemplateUrls);
+        }
+      }
+
+      const metaElement = typeof document !== 'undefined'
+        ? document.querySelector('meta[name="pdf-template-url"]')
+        : null;
+      if (metaElement && metaElement.content) {
+        configUrls.push(metaElement.content);
+      }
+
+      const scriptElement = typeof document !== 'undefined'
+        ? document.querySelector('script[data-pdf-template-url]')
+        : null;
+      if (scriptElement && scriptElement.dataset.pdfTemplateUrl) {
+        configUrls.push(scriptElement.dataset.pdfTemplateUrl);
+      }
+
+      sources.push(...configUrls);
+
+      if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') {
+        sources.push('/api/pdf-template');
+      }
+
+      sources.push(DEFAULT_TEMPLATE_URL);
+
+      const seen = new Set();
+      return sources.filter(url => {
+        if (typeof url !== 'string' || url.trim() === '') {
+          return false;
+        }
+        if (seen.has(url)) {
+          return false;
+        }
+        seen.add(url);
+        return true;
+      });
+    };
+
+    const fetchTemplateBytes = async source => {
+      if (typeof source !== 'string' || source.trim() === '') {
+        throw new Error('PDF template source is invalid.');
+      }
+
+      const requestInit = {
+        headers: {
+          Accept: 'application/pdf,application/json;q=0.9,*/*;q=0.8'
+        }
+      };
+
+      try {
+        const isRelative = /^\//.test(source);
+        if (!isRelative) {
+          requestInit.mode = 'cors';
+        }
+
+        const response = await fetch(source, requestInit);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch template from ${source} (status ${response.status}).`);
+        }
+
+        const contentType = response.headers.get('Content-Type') || '';
+
+        if (contentType.includes('application/json')) {
+          const data = await response.json();
+          const base64 = data.pdfBase64 || data.base64 || data.data || data.body;
+          return decodeBase64ToUint8Array(base64);
+        }
+
+        const buffer = await response.arrayBuffer();
+        return new Uint8Array(buffer);
+      } catch (error) {
+        const message = error && error.message ? error.message : 'Unknown error';
+        throw new Error(`Unable to fetch PDF template from ${source}: ${message}`);
+      }
+    };
+
+    const getTemplatePdfBytes = async () => {
+      if (templatePdfBytesCache && templatePdfBytesCache.length) {
+        return templatePdfBytesCache;
+      }
+
+      if (templatePdfLoadFailed) {
+        return null;
+      }
+
+      const sources = getConfiguredTemplateSources();
+
+      for (let index = 0; index < sources.length; index += 1) {
+        const source = sources[index];
+        try {
+          const bytes = await fetchTemplateBytes(source);
+          if (bytes && bytes.length) {
+            templatePdfBytesCache = bytes;
+            return templatePdfBytesCache;
+          }
+        } catch (error) {
+          console.warn('Unable to load PDF template from source', source, error);
+        }
+      }
+
+      templatePdfLoadFailed = true;
+      return null;
+    };
 
     const captureParticipant = () => {
       const firstNameInput = document.getElementById('firstName');
@@ -1003,34 +1148,34 @@
         throw new Error('PDFLib failed to load.');
       }
 
-      if (!templatePdfBytesCache && !templatePdfLoadFailed) {
-        try {
-          const templateResponse = await fetch(PDF_TEMPLATE_URL);
-          if (!templateResponse.ok) {
-            throw new Error('Unable to load template PDF');
-          }
-          templatePdfBytesCache = new Uint8Array(await templateResponse.arrayBuffer());
-        } catch (templateError) {
-          templatePdfLoadFailed = true;
-          console.warn('Assessment template PDF unavailable, generating results without background.', templateError);
-        }
-      }
-
       const pdfDoc = await PDFDocument.create();
 
       let templateBackground = null;
       let pageWidth = DEFAULT_PDF_PAGE_WIDTH;
       let pageHeight = DEFAULT_PDF_PAGE_HEIGHT;
 
-      if (templatePdfBytesCache && templatePdfBytesCache.length) {
+      if (!templatePdfLoadFailed) {
         try {
-          [templateBackground] = await pdfDoc.embedPdf(templatePdfBytesCache);
-          pageWidth = templateBackground.width;
-          pageHeight = templateBackground.height;
-        } catch (embedError) {
+          const templateBytes = await getTemplatePdfBytes();
+          if (templateBytes && templateBytes.length) {
+            const embeddedPages = await pdfDoc.embedPdf(templateBytes);
+            if (embeddedPages && embeddedPages.length > 0) {
+              [templateBackground] = embeddedPages;
+              const size = templateBackground && typeof templateBackground.size === 'function'
+                ? templateBackground.size()
+                : null;
+              pageWidth = typeof templateBackground.width === 'number'
+                ? templateBackground.width
+                : (size && typeof size.width === 'number' ? size.width : pageWidth);
+              pageHeight = typeof templateBackground.height === 'number'
+                ? templateBackground.height
+                : (size && typeof size.height === 'number' ? size.height : pageHeight);
+            }
+          }
+        } catch (templateError) {
           templateBackground = null;
           templatePdfLoadFailed = true;
-          console.warn('Failed to embed assessment template PDF, using blank page.', embedError);
+          console.warn('Assessment template PDF unavailable, generating results without background.', templateError);
         }
       }
 
