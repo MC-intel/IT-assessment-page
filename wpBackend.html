@@ -1384,20 +1384,18 @@
         return;
       }
 
-      const payload = {
-        first_name: sanitizeSubmissionField(participant.firstName),
-        last_name: sanitizeSubmissionField(participant.lastName),
-        email: sanitizeSubmissionField(participant.email),
-        club_name: sanitizeSubmissionField(participant.name),
-        risk_level: sanitizeSubmissionField(riskLevelText),
-        assessment_pdf_link: pdfUrl
-      };
+      const submissionData = new FormData();
+      submissionData.append('first_name', sanitizeSubmissionField(participant.firstName));
+      submissionData.append('last_name', sanitizeSubmissionField(participant.lastName));
+      submissionData.append('email', sanitizeSubmissionField(participant.email));
+      submissionData.append('club_name', sanitizeSubmissionField(participant.name));
+      submissionData.append('risk_level', sanitizeSubmissionField(riskLevelText));
+      submissionData.append('assessment_pdf_link', pdfUrl);
 
       try {
         const response = await fetch(BACKEND_HUBSPOT_SUBMIT_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: submissionData
         });
 
         if (!response.ok) {
