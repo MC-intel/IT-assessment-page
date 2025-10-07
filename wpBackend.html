@@ -831,7 +831,8 @@
       'Do you have a disaster response team with clear roles and communication protocols?'
     ];
 
-    const BACKEND_HUBSPOT_UPLOAD_URL = 'https://keyring-fv5f.onrender.com/api/hubspot/pdf-upload';
+    const BACKEND_PDF_UPLOAD_URL = 'https://keyring-fv5f.onrender.com/api/upload-pdf';
+    const BACKEND_HUBSPOT_SUBMIT_URL = 'https://keyring-fv5f.onrender.com/api/hubspot/pdf-submit';
     const DEFAULT_PDF_PAGE_WIDTH = 612;
     const DEFAULT_PDF_PAGE_HEIGHT = 792;
     const DEFAULT_TEMPLATE_URL = 'https://keyring-fv5f.onrender.com/api/pdf-template';
@@ -840,7 +841,6 @@
     let templatePdfBytesCache = null;
     let latestPdfBytesCache = null;
     let latestPdfSignature = '';
-    let latestPdfBase64Cache = '';
     let templatePdfLoadFailed = false;
 
     const decodeHTMLEntities = (() => {
@@ -1025,34 +1025,13 @@
       }
     });
 
-    const arrayBufferToBase64 = bytes => {
-      if (!bytes || !bytes.length) {
-        return '';
-      }
-
-      const chunkSize = 0x8000;
-      let binary = '';
-
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        const chunk = bytes.subarray(i, i + chunkSize);
-        binary += String.fromCharCode.apply(null, chunk);
-      }
-
-      return window.btoa(binary);
-    };
-
     const preparePdfPayload = async (participant, riskLevelText) => {
       const snapshot = getAssessmentSnapshot(participant, riskLevelText);
       const { pdfBytes, signature } = await generateAssessmentPdfBytes(snapshot);
 
-      if (!latestPdfBase64Cache) {
-        latestPdfBase64Cache = arrayBufferToBase64(pdfBytes);
-      }
-
       return {
         pdfBytes,
         signature,
-        base64: latestPdfBase64Cache,
         fileName: RESULTS_PDF_FILE_NAME
       };
     };
@@ -1354,12 +1333,42 @@
 
       latestPdfBytesCache = pdfBytes;
       latestPdfSignature = signature;
-      latestPdfBase64Cache = '';
 
       return { pdfBytes, signature };
     };
 
     checkFormCompletion();
+
+    const uploadPdfAndGetLink = async (pdfBytes, filename) => {
+      const formData = new FormData();
+      formData.append('file', new Blob([pdfBytes], { type: 'application/pdf' }), filename);
+
+      try {
+        const response = await fetch(BACKEND_PDF_UPLOAD_URL, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          console.error('PDF upload failed', errorText || `Status ${response.status}`);
+          return null;
+        }
+
+        const data = await response.json().catch(() => null);
+        if (!data || typeof data.pdf_url !== 'string' || !data.pdf_url) {
+          console.error('PDF upload response missing pdf_url', data);
+          return null;
+        }
+
+        return data.pdf_url;
+      } catch (error) {
+        console.error('Error uploading PDF', error);
+        return null;
+      }
+    };
+
+    const sanitizeSubmissionField = value => (typeof value === 'string' ? value.trim() : '');
 
     const sendToHubSpot = async (participant, riskLevelText, pdfPayload) => {
       if (!participant || !pdfPayload || !pdfPayload.pdfBytes || !pdfPayload.pdfBytes.length) {
@@ -1367,30 +1376,41 @@
         return;
       }
 
-      const formData = new FormData();
-      formData.append('first_name', participant.firstName || '');
-      formData.append('last_name', participant.lastName || '');
-      formData.append('email', participant.email || '');
-      formData.append('club_name', participant.name || '');
-      formData.append('risk_level', riskLevelText || '');
-      formData.append(
-        'pdf',
-        new Blob([pdfPayload.pdfBytes], { type: 'application/pdf' }),
-        pdfPayload.fileName || RESULTS_PDF_FILE_NAME
-      );
+      const fileName = pdfPayload.fileName || RESULTS_PDF_FILE_NAME;
+      const pdfUrl = await uploadPdfAndGetLink(pdfPayload.pdfBytes, fileName);
+
+      if (!pdfUrl) {
+        console.warn('HubSpot submission skipped: Unable to obtain PDF link.');
+        return;
+      }
+
+      const payload = {
+        first_name: sanitizeSubmissionField(participant.firstName),
+        last_name: sanitizeSubmissionField(participant.lastName),
+        email: sanitizeSubmissionField(participant.email),
+        club_name: sanitizeSubmissionField(participant.name),
+        risk_level: sanitizeSubmissionField(riskLevelText),
+        assessment_pdf_link: pdfUrl
+      };
 
       try {
-        const response = await fetch(BACKEND_HUBSPOT_UPLOAD_URL, {
+        const response = await fetch(BACKEND_HUBSPOT_SUBMIT_URL, {
           method: 'POST',
-          body: formData
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
+          const errorText = await response.text().catch(() => '');
           console.error('Backend HubSpot submission failed', errorText || `Status ${response.status}`);
+          return false;
         }
+
+        console.log('HubSpot submission succeeded via backend.');
+        return true;
       } catch (err) {
-        console.error('Error sending assessment results to backend', err);
+        console.error('Error submitting assessment results to backend', err);
+        return false;
       }
     };
 
