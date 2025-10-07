@@ -987,10 +987,12 @@
         const source = sources[index];
         try {
           const bytes = await fetchTemplateBytes(source);
-          if (bytes && bytes.length) {
-            templatePdfBytesCache = bytes;
-            return templatePdfBytesCache;
+          if (!bytes || !bytes.length) {
+            continue;
           }
+
+          templatePdfBytesCache = bytes;
+          return templatePdfBytesCache;
         } catch (error) {
           console.warn('Unable to load PDF template from source', source, error);
         }
@@ -1404,11 +1406,30 @@
 
       const formData = new FormData(assessmentForm);
 
+      const totalQuestions = ASSESSMENT_QUESTIONS.length;
       let yesCount = 0;
       let noCount = 0;
       let unsureCount = 0;
       let naCount = 0;
-      const totalQuestions = ASSESSMENT_QUESTIONS.length;
+
+      for (let i = 1; i <= totalQuestions; i += 1) {
+        const radios = document.getElementsByName(`q${i}`);
+        const container = radios[0]?.closest('.question');
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+
+        if (!selected) {
+          if (container) {
+            container.style.border = '2px solid #dc3545';
+          }
+          alert(`Please answer Question ${i} before submitting.`);
+          return;
+        }
+
+        if (container) {
+          container.style.border = '4px solid #28a745';
+        }
+      }
+
       let answeredQuestions = 0;
       let applicableQuestions = 0;
 
