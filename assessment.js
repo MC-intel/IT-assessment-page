@@ -14,7 +14,7 @@
     const HUBSPOT_RISK_LEVEL_FIELD = 'it_assessment_risk_level';
     const HUBSPOT_RESULTS_PDF_FIELD = 'asssessment_results';
 
-    const DEFAULT_TEMPLATE_URL = 'https://pearlsolves.com/wp-content/uploads/2025/09/Golf-Assessment-Results-Background-.pdf';
+    const DEFAULT_TEMPLATE_URL = 'https://keyring-fv5f.onrender.com/api/pdf-template';
 
     const decodeBase64ToUint8Array = base64 => {
       if (typeof base64 !== 'string' || base64.trim() === '') {
@@ -70,9 +70,6 @@
 
       sources.push(...configUrls);
 
-      if (typeof window !== 'undefined' && window.location && window.location.origin !== 'null') {
-        sources.push('/api/pdf-template');
-      }
       sources.push(DEFAULT_TEMPLATE_URL);
 
       const seen = new Set();
