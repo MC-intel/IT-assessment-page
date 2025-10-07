@@ -987,10 +987,12 @@
         const source = sources[index];
         try {
           const bytes = await fetchTemplateBytes(source);
-          if (bytes && bytes.length) {
-            templatePdfBytesCache = bytes;
-            return templatePdfBytesCache;
+          if (!bytes || !bytes.length) {
+            continue;
           }
+
+          templatePdfBytesCache = bytes;
+          return templatePdfBytesCache;
         } catch (error) {
           console.warn('Unable to load PDF template from source', source, error);
         }
