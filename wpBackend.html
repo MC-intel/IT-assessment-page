@@ -831,12 +831,7 @@
       'Do you have a disaster response team with clear roles and communication protocols?'
     ];
 
-    const HUBSPOT_CLUB_FIELD = 'club_name';
-
-    const HUBSPOT_RISK_LEVEL_FIELD = 'it_assessment_risk_level';
-    const HUBSPOT_RESULTS_PDF_FIELD = 'asssessment_results';
-    const HUBSPOT_DEFAULT_OBJECT_TYPE_ID = '0-1';
-    const HUBSPOT_COMPANY_OBJECT_TYPE_ID = '0-2';
+    const BACKEND_HUBSPOT_UPLOAD_URL = 'https://keyring-fv5f.onrender.com/api/hubspot/pdf-upload';
     const DEFAULT_PDF_PAGE_WIDTH = 612;
     const DEFAULT_PDF_PAGE_HEIGHT = 792;
     const DEFAULT_TEMPLATE_URL = 'https://pearlsolves.com/wp-content/uploads/2025/09/Golf-Assessment-Results-Background-.pdf';
@@ -1368,113 +1363,36 @@
 
     checkFormCompletion();
 
-    const getHubSpotUtk = () => {
-      if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
-        return null;
-      }
-
-      const match = document.cookie.match(/(?:^|; )hubspotutk=([^;]+)/);
-      return match ? decodeURIComponent(match[1]) : null;
-    };
-
-    const buildHubSpotFields = (participant, riskLevelText) => {
-      const fields = [];
-
-      const pushField = (name, value, objectTypeId = HUBSPOT_DEFAULT_OBJECT_TYPE_ID) => {
-        if (typeof value !== 'string') {
-          return;
-        }
-
-        const trimmed = value.trim();
-        if (!trimmed) {
-          return;
-        }
-
-        fields.push({
-          objectTypeId,
-          name,
-          value: trimmed
-        });
-      };
-
-      pushField('firstname', participant.firstName);
-      pushField('lastname', participant.lastName);
-      pushField('email', participant.email);
-      pushField(HUBSPOT_RISK_LEVEL_FIELD, riskLevelText);
-
-      if (participant.name && participant.name.trim()) {
-        pushField('name', participant.name, HUBSPOT_COMPANY_OBJECT_TYPE_ID);
-        pushField(HUBSPOT_CLUB_FIELD, participant.name, HUBSPOT_COMPANY_OBJECT_TYPE_ID);
-        pushField(HUBSPOT_CLUB_FIELD, participant.name, HUBSPOT_DEFAULT_OBJECT_TYPE_ID);
-      }
-
-      return fields;
-    };
-
-    const sendToHubSpot = async (participant, riskLevelText, pdfAttachment) => {
-      const url = 'https://api.hsforms.com/submissions/v3/integration/submit/1959814/4861c8c2-4019-4bd8-9a4c-b1218c87d392';
-
-      const payload = {
-        submittedAt: Date.now(),
-        fields: buildHubSpotFields(participant, riskLevelText),
-        context: {
-          pageUri: window.location.href,
-          pageName: document.title
-        }
-      };
-
-      const hubSpotUtk = getHubSpotUtk();
-      if (hubSpotUtk) {
-        payload.context.hutk = hubSpotUtk;
-      }
-
-      if (payload.fields.length === 0) {
-        console.warn('HubSpot submission skipped: No valid fields to submit.');
+    const sendToHubSpot = async (participant, riskLevelText, pdfPayload) => {
+      if (!participant || !pdfPayload || !pdfPayload.pdfBytes || !pdfPayload.pdfBytes.length) {
+        console.warn('HubSpot submission skipped: Missing required payload data.');
         return;
       }
 
-      if (pdfAttachment && pdfAttachment.base64) {
-        payload.files = [
-          {
-            field: HUBSPOT_RESULTS_PDF_FIELD,
-            fileName: pdfAttachment.fileName || RESULTS_PDF_FILE_NAME,
-            content: pdfAttachment.base64,
-            type: 'application/pdf'
-          }
-        ];
-      }
+      const formData = new FormData();
+      formData.append('first_name', participant.firstName || '');
+      formData.append('last_name', participant.lastName || '');
+      formData.append('email', participant.email || '');
+      formData.append('club_name', participant.name || '');
+      formData.append('risk_level', riskLevelText || '');
+      formData.append(
+        'pdf',
+        new Blob([pdfPayload.pdfBytes], { type: 'application/pdf' }),
+        pdfPayload.fileName || RESULTS_PDF_FILE_NAME
+      );
 
       try {
-        const response = await fetch(url, {
+        const response = await fetch(BACKEND_HUBSPOT_UPLOAD_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: formData
         });
 
-        const status = response.status;
-        const contentLengthHeader = response.headers.get('Content-Length');
-        const hasBody = status !== 204 && contentLengthHeader !== '0';
-
         if (!response.ok) {
-          const rawText = hasBody ? await response.text() : '';
-          console.error('HubSpot submission failed', rawText || `Status ${status}`);
-          return;
-        }
-
-        if (!hasBody) {
-          console.log('HubSpot submission success: No content returned.');
-          return;
-        }
-
-        const contentType = response.headers.get('Content-Type') || '';
-
-        if (contentType.includes('application/json')) {
-          console.log('HubSpot submission success:', await response.json());
-        } else {
-          console.log('HubSpot submission success (non-JSON response):', await response.text());
+          const errorText = await response.text();
+          console.error('Backend HubSpot submission failed', errorText || `Status ${response.status}`);
         }
       } catch (err) {
-        console.error('Error sending to HubSpot', err);
+        console.error('Error sending assessment results to backend', err);
       }
     };
 
@@ -1649,21 +1567,12 @@
             riskLevelEl ? riskLevelEl.innerText.trim() : riskLevel
           );
 
-          let pdfAttachment = null;
           try {
             const pdfPayload = await preparePdfPayload(participant, riskLevelText);
-
-            if (pdfPayload.base64) {
-              pdfAttachment = {
-                base64: pdfPayload.base64,
-                fileName: pdfPayload.fileName
-              };
-            }
+            await sendToHubSpot(participant, riskLevelText, pdfPayload);
           } catch (pdfError) {
             console.error('Error preparing assessment PDF for HubSpot submission', pdfError);
           }
-
-          await sendToHubSpot(participant, riskLevelText, pdfAttachment);
         } else {
           console.warn('Participant information incomplete; skipping HubSpot submission.');
         }
