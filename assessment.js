@@ -1,3 +1,4 @@
+
 (function () {
 
     const calcBtn = document.querySelector('.calculate-btn');
@@ -9,12 +10,45 @@
       document.getElementById('clubname')
     ];
 
-    const HUBSPOT_CLUB_FIELD = 'club_name';
+    const ASSESSMENT_QUESTIONS = [
+      'Do you process credit cards anywhere in your club (pro shop, restaurant, beverage carts, etc.)?',
+      'Are you PCI DSS compliant across all payment locations?',
+      'Are your data backups tested monthly, encrypted, and stored both onsite and offsite with at least one air-gapped copy?',
+      'Do you have a tested plan for getting back online quickly if ransomware locks all your systems?',
+      'Is your network properly segmented with firewalls separating member systems, staff systems, and guest WiFi?',
+      'Are all your servers, workstations, and network equipment under warranty with a documented hardware refresh cycle?',
+      'Is access removed immediately when employees leave?',
+      'Do you audit user access quarterly and remove unnecessary permissions?',
+      'Do you have documented policies for member data collection, storage, and privacy rights?',
+      'Do you have 24/7 security monitoring with immediate threat response?',
+      'Do all staff receive annual cybersecurity training with simulated phishing tests?',
+      'Do you have redundant internet connections that automatically switch during outages?',
+      'Do you have a disaster response team with clear roles and communication protocols?'
+    ];
 
-    const HUBSPOT_RISK_LEVEL_FIELD = 'it_assessment_risk_level';
-    const HUBSPOT_RESULTS_PDF_FIELD = 'asssessment_results';
-
+    const BACKEND_PDF_UPLOAD_URL = 'https://keyring-fv5f.onrender.com/api/upload-pdf';
+    const BACKEND_HUBSPOT_SUBMIT_URL = 'https://keyring-fv5f.onrender.com/api/hubspot/pdf-submit';
+    const DEFAULT_PDF_PAGE_WIDTH = 612;
+    const DEFAULT_PDF_PAGE_HEIGHT = 792;
     const DEFAULT_TEMPLATE_URL = 'https://keyring-fv5f.onrender.com/api/pdf-template';
+    const RESULTS_PDF_FILE_NAME = 'Golf-Club-Security-Assessment-Results.pdf';
+
+    let templatePdfBytesCache = null;
+    let latestPdfBytesCache = null;
+    let latestPdfSignature = '';
+    let templatePdfLoadFailed = false;
+
+    const decodeHTMLEntities = (() => {
+      const textarea = document.createElement('textarea');
+      return text => {
+        if (typeof text !== 'string') {
+          return '';
+        }
+
+        textarea.innerHTML = text;
+        return textarea.value;
+      };
+    })();
 
     const decodeBase64ToUint8Array = base64 => {
       if (typeof base64 !== 'string' || base64.trim() === '') {
@@ -22,7 +56,6 @@
       }
 
       const sanitized = base64.replace(/\s+/g, '');
-
       const atobFn = typeof atob === 'function'
         ? atob
         : (typeof window !== 'undefined' && typeof window.atob === 'function' ? window.atob : null);
@@ -68,6 +101,13 @@
         configUrls.push(metaElement.content);
       }
 
+      const scriptElement = typeof document !== 'undefined'
+        ? document.querySelector('script[data-pdf-template-url]')
+        : null;
+      if (scriptElement && scriptElement.dataset.pdfTemplateUrl) {
+        configUrls.push(scriptElement.dataset.pdfTemplateUrl);
+      }
+
       sources.push(...configUrls);
 
       sources.push(DEFAULT_TEMPLATE_URL);
@@ -85,7 +125,7 @@
       });
     };
 
-    const fetchTemplateBytes = async (source) => {
+    const fetchTemplateBytes = async source => {
       if (typeof source !== 'string' || source.trim() === '') {
         throw new Error('PDF template source is invalid.');
       }
@@ -95,6 +135,7 @@
           Accept: 'application/pdf,application/json;q=0.9,*/*;q=0.8'
         }
       };
+
       try {
         const isRelative = /^\//.test(source);
         if (!isRelative) {
@@ -122,44 +163,49 @@
       }
     };
 
-    const loadPdfTemplate = async pdfDoc => {
+    const getTemplatePdfBytes = async () => {
+      if (templatePdfBytesCache && templatePdfBytesCache.length) {
+        return templatePdfBytesCache;
+      }
+
+      if (templatePdfLoadFailed) {
+        return null;
+      }
+
       const sources = getConfiguredTemplateSources();
 
       for (let index = 0; index < sources.length; index += 1) {
         const source = sources[index];
         try {
           const bytes = await fetchTemplateBytes(source);
-          const embeddedPages = await pdfDoc.embedPdf(bytes);
-          if (embeddedPages && embeddedPages.length > 0) {
-            const embeddedPage = embeddedPages[0];
-            const size = typeof embeddedPage.size === 'function' ? embeddedPage.size() : null;
-            const width = typeof embeddedPage.width === 'number'
-              ? embeddedPage.width
-              : (size && typeof size.width === 'number' ? size.width : undefined);
-            const height = typeof embeddedPage.height === 'number'
-              ? embeddedPage.height
-              : (size && typeof size.height === 'number' ? size.height : undefined);
-
-            return {
-              background: embeddedPage,
-              width,
-              height,
-            };
+          if (!bytes || !bytes.length) {
+            continue;
           }
+
+          templatePdfBytesCache = bytes;
+          return templatePdfBytesCache;
         } catch (error) {
           console.warn('Unable to load PDF template from source', source, error);
         }
       }
 
+      templatePdfLoadFailed = true;
       return null;
     };
 
-    const captureParticipant = () => ({
-      firstName: document.getElementById('firstName').value.trim(),
-      lastName: document.getElementById('lastName').value.trim(),
-      email: document.getElementById('email').value.trim(),
-      name: document.getElementById('clubname').value.trim()
-    });
+    const captureParticipant = () => {
+      const firstNameInput = document.getElementById('firstName');
+      const lastNameInput = document.getElementById('lastName');
+      const emailInput = document.getElementById('email');
+      const clubNameInput = document.getElementById('clubname');
+
+      return {
+        firstName: decodeHTMLEntities(((firstNameInput && firstNameInput.value) || '').trim()),
+        lastName: decodeHTMLEntities(((lastNameInput && lastNameInput.value) || '').trim()),
+        email: decodeHTMLEntities(((emailInput && emailInput.value) || '').trim()),
+        name: decodeHTMLEntities(((clubNameInput && clubNameInput.value) || '').trim())
+      };
+    };
 
     const checkFormCompletion = () => {
       const allFilled = requiredFields.every(input => input && input.value.trim() !== '');
@@ -174,117 +220,390 @@
       }
     });
 
-    const getHubSpotUtk = () => {
-      if (typeof document === 'undefined' || typeof document.cookie !== 'string') {
-        return null;
-      }
+    const preparePdfPayload = async (participant, riskLevelText) => {
+      const snapshot = getAssessmentSnapshot(participant, riskLevelText);
+      const { pdfBytes, signature } = await generateAssessmentPdfBytes(snapshot);
 
-      const match = document.cookie.match(/(?:^|; )hubspotutk=([^;]+)/);
-      return match ? decodeURIComponent(match[1]) : null;
+      return {
+        pdfBytes,
+        signature,
+        fileName: RESULTS_PDF_FILE_NAME
+      };
     };
 
-    const HUBSPOT_DEFAULT_OBJECT_TYPE_ID = '0-1';
+    const getAssessmentSnapshot = (participantOverride, riskLevelOverride) => {
+      const participant = participantOverride
+        ? {
+            firstName: decodeHTMLEntities((participantOverride.firstName || '').trim()),
+            lastName: decodeHTMLEntities((participantOverride.lastName || '').trim()),
+            email: decodeHTMLEntities((participantOverride.email || '').trim()),
+            name: decodeHTMLEntities((participantOverride.name || '').trim())
+          }
+        : captureParticipant();
+      const riskLevelEl = document.getElementById('riskLevel');
+      const riskLevelText = decodeHTMLEntities(
+        (riskLevelOverride || (riskLevelEl ? riskLevelEl.innerText.trim() : ''))
+      );
 
-    const buildHubSpotFields = (participant, riskLevelText) => {
-      const rawFields = [
-        { name: 'firstname', value: participant.firstName, objectTypeId: '0-1' },
-        { name: 'lastname', value: participant.lastName, objectTypeId: '0-1' },
-        { name: 'email', value: participant.email, objectTypeId: '0-1' },
-
-        { name: HUBSPOT_RISK_LEVEL_FIELD, value: riskLevelText, objectTypeId: '0-1' }
-      ];
-
-      if (typeof participant.name === 'string' && participant.name.trim() !== '') {
-        rawFields.push({ name: HUBSPOT_CLUB_FIELD, value: participant.name, objectTypeId: '0-2' });
+      if (!riskLevelText) {
+        throw new Error('Risk level not yet calculated.');
       }
 
-      return rawFields
-        .filter(field => typeof field.value === 'string' && field.value.trim() !== '')
-        .map(field => ({
-          objectTypeId: field.objectTypeId || HUBSPOT_DEFAULT_OBJECT_TYPE_ID,
-          name: field.name,
-          value: field.value.trim()
-        }));
+      const riskClass = riskLevelEl ? riskLevelEl.className.replace('risk-level', '').trim() : '';
+
+      const answers = [];
+      let yesCount = 0;
+      let noCount = 0;
+      let unsureCount = 0;
+      let naCount = 0;
+
+      ASSESSMENT_QUESTIONS.forEach((question, index) => {
+        const selected = document.querySelector(`input[name="q${index + 1}"]:checked`);
+        if (selected) {
+          answers.push(selected.value);
+          if (selected.value === 'yes') {
+            yesCount += 1;
+          } else if (selected.value === 'no') {
+            noCount += 1;
+          } else if (selected.value === 'unsure') {
+            unsureCount += 1;
+          } else if (selected.value === 'na') {
+            naCount += 1;
+          }
+        } else {
+          answers.push('Not Answered');
+        }
+      });
+
+      const detailsElement = document.getElementById('riskDetails');
+      const recommendationsElement = document.getElementById('recommendations');
+
+      return {
+        participant,
+        riskLevelText,
+        riskClass,
+        answers,
+        yesCount,
+        noCount,
+        unsureCount,
+        naCount,
+        detailsText: decodeHTMLEntities(detailsElement ? detailsElement.innerText : ''),
+        recsText: decodeHTMLEntities(recommendationsElement ? recommendationsElement.innerText : ''),
+        today: new Date().toLocaleDateString()
+      };
     };
 
-    const sendToHubSpot = async (participant, riskLevelText) => {
-      const url = 'https://api.hsforms.com/submissions/v3/integration/submit/1959814/4861c8c2-4019-4bd8-9a4c-b1218c87d392';
+    const createSnapshotSignature = snapshot => JSON.stringify({
+      participant: snapshot.participant,
+      riskLevelText: snapshot.riskLevelText,
+      riskClass: snapshot.riskClass,
+      answers: snapshot.answers,
+      counts: [snapshot.yesCount, snapshot.noCount, snapshot.unsureCount, snapshot.naCount],
+      details: snapshot.detailsText,
+      recs: snapshot.recsText,
+      today: snapshot.today
+    });
 
-      const payload = {
-        submittedAt: Date.now(),
-        fields: buildHubSpotFields(participant, riskLevelText),
-        context: {
-          pageUri: window.location.href,
-          pageName: document.title
+    const generateAssessmentPdfBytes = async snapshot => {
+      const signature = createSnapshotSignature(snapshot);
+      if (latestPdfBytesCache && signature === latestPdfSignature) {
+        return { pdfBytes: latestPdfBytesCache, signature };
+      }
+
+      const { PDFDocument, rgb, StandardFonts } = window.PDFLib || {};
+      if (!PDFDocument || !rgb || !StandardFonts) {
+        throw new Error('PDFLib failed to load.');
+      }
+
+      const pdfDoc = await PDFDocument.create();
+
+      let templateBackground = null;
+      let pageWidth = DEFAULT_PDF_PAGE_WIDTH;
+      let pageHeight = DEFAULT_PDF_PAGE_HEIGHT;
+
+      if (!templatePdfLoadFailed) {
+        try {
+          const templateBytes = await getTemplatePdfBytes();
+          if (templateBytes && templateBytes.length) {
+            const embeddedPages = await pdfDoc.embedPdf(templateBytes);
+            if (embeddedPages && embeddedPages.length > 0) {
+              [templateBackground] = embeddedPages;
+              const size = templateBackground && typeof templateBackground.size === 'function'
+                ? templateBackground.size()
+                : null;
+              pageWidth = typeof templateBackground.width === 'number'
+                ? templateBackground.width
+                : (size && typeof size.width === 'number' ? size.width : pageWidth);
+              pageHeight = typeof templateBackground.height === 'number'
+                ? templateBackground.height
+                : (size && typeof size.height === 'number' ? size.height : pageHeight);
+            }
+          }
+        } catch (templateError) {
+          templateBackground = null;
+          templatePdfLoadFailed = true;
+          console.warn('Assessment template PDF unavailable, generating results without background.', templateError);
+        }
+      }
+
+      const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+      const topMarginFirstPage = 140;
+      const topMargin = 70;
+      const bottomMargin = 50;
+      const contentWidth = pageWidth - 120;
+
+      const addPageWithTemplate = () => {
+        const page = pdfDoc.addPage([pageWidth, pageHeight]);
+        if (templateBackground) {
+          page.drawPage(templateBackground, {
+            x: 0,
+            y: 0,
+            width: pageWidth,
+            height: pageHeight
+          });
+        }
+        return page;
+      };
+
+      let currentPage = addPageWithTemplate();
+      let yOffset = topMarginFirstPage;
+
+      const riskColors = {
+        'risk-low': rgb(0, 128 / 255, 0),
+        'risk-medium': rgb(204 / 255, 140 / 255, 0),
+        'risk-high': rgb(204 / 255, 51 / 255, 51 / 255),
+        'risk-critical': rgb(153 / 255, 0, 0)
+      };
+
+      const answerColors = {
+        yes: rgb(0, 128 / 255, 0),
+        no: rgb(1, 0, 0),
+        unsure: rgb(128 / 255, 128 / 255, 128 / 255),
+        na: rgb(23 / 255, 162 / 255, 184 / 255)
+      };
+
+      const ensureSpace = (lineHeight = 18) => {
+        if (yOffset + lineHeight > pageHeight - bottomMargin) {
+          currentPage = addPageWithTemplate();
+          yOffset = topMargin;
         }
       };
 
-      const hubSpotUtk = getHubSpotUtk();
-      if (hubSpotUtk) {
-        payload.context.hutk = hubSpotUtk;
-      }
+      const drawLine = ({ text, x = 60, font = regularFont, size = 12, color = rgb(0, 0, 0), lineHeight = 18 }) => {
+        ensureSpace(lineHeight);
+        currentPage.drawText(text, {
+          x,
+          y: pageHeight - yOffset,
+          size,
+          font,
+          color
+        });
+        yOffset += lineHeight;
+      };
 
-      if (payload.fields.length === 0) {
-        console.warn('HubSpot submission skipped: No valid fields to submit.');
-        return;
-      }
+      const drawCentered = ({ text, font = boldFont, size = 16, color = rgb(0, 0, 0), lineHeight = 24 }) => {
+        ensureSpace(lineHeight);
+        const textWidth = font.widthOfTextAtSize(text, size);
+        const x = (pageWidth - textWidth) / 2;
+        currentPage.drawText(text, {
+          x,
+          y: pageHeight - yOffset,
+          size,
+          font,
+          color
+        });
+        yOffset += lineHeight;
+      };
 
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+      const wrapText = (text, maxWidth, font, size) => {
+        const words = text.split(/\s+/);
+        const lines = [];
+        let currentLine = '';
+
+        words.forEach(word => {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+          const width = font.widthOfTextAtSize(testLine, size);
+          if (width <= maxWidth) {
+            currentLine = testLine;
+          } else {
+            if (currentLine) {
+              lines.push(currentLine);
+            }
+            currentLine = word;
+          }
         });
 
-        const status = response.status;
-        const contentLengthHeader = response.headers.get('Content-Length');
-        const hasBody = status !== 204 && contentLengthHeader !== '0';
-
-        if (!response.ok) {
-          const rawText = hasBody ? await response.text() : '';
-          console.error('HubSpot submission failed', rawText || `Status ${status}`);
-          return;
+        if (currentLine) {
+          lines.push(currentLine);
         }
 
-        if (!hasBody) {
-          console.log('HubSpot submission success: No content returned.');
-          return;
-        }
+        return lines;
+      };
 
-        const contentType = response.headers.get('Content-Type') || '';
+      const drawParagraph = (text, { x = 60, font = regularFont, size = 12, lineHeight = 18, color = rgb(0, 0, 0), maxWidth = contentWidth } = {}) => {
+        const paragraphs = text
+          .split(/\r?\n/)
+          .map(line => line.trim())
+          .filter(line => line.length > 0);
 
-        if (contentType.includes('application/json')) {
-          console.log('HubSpot submission success:', await response.json());
-        } else {
-          console.log('HubSpot submission success (non-JSON response):', await response.text());
-        }
-      } catch (err) {
-        console.error('Error sending to HubSpot', err);
-      }
+        paragraphs.forEach((paragraph, index) => {
+          const lines = wrapText(paragraph, maxWidth, font, size);
+          lines.forEach(line => {
+            drawLine({ text: line, x, font, size, color, lineHeight });
+          });
+          if (index < paragraphs.length - 1) {
+            yOffset += lineHeight;
+          }
+        });
+      };
+
+      drawCentered({ text: 'Golf Club Cybersecurity Initial Assessment Results', size: 18 });
+      drawCentered({ text: "Pearl Solutions Group - Your Club's Digital Caddie", font: regularFont, size: 12, lineHeight: 18 });
+      drawCentered({ text: `Assessment Date: ${snapshot.today}`, font: regularFont, size: 12, lineHeight: 18 });
+
+      yOffset += 10;
+      drawLine({ text: `Prepared For: ${snapshot.participant.firstName} ${snapshot.participant.lastName}` });
+      drawLine({ text: `Email: ${snapshot.participant.email}` });
+      drawLine({ text: `Club / Organization: ${snapshot.participant.name}` });
+
+      yOffset += 10;
+      drawLine({
+        text: `Risk Level: ${snapshot.riskLevelText}`,
+        font: boldFont,
+        size: 16,
+        color: riskColors[snapshot.riskClass] || rgb(0, 0, 0),
+        lineHeight: 24
+      });
+
+      yOffset += 10;
+      drawLine({ text: 'Initial Assessment Summary:', font: boldFont, size: 14, lineHeight: 22 });
+      drawLine({ text: `Yes Answers: ${snapshot.yesCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80 });
+      drawLine({ text: `No Answers: ${snapshot.noCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80 });
+      drawLine({ text: `Unsure Answers: ${snapshot.unsureCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80 });
+      drawLine({ text: `Not Applicable: ${snapshot.naCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80 });
+
+      currentPage = addPageWithTemplate();
+      yOffset = topMargin;
+
+      drawCentered({ text: 'Assessment Questions & Responses', size: 16 });
+      yOffset += 10;
+
+      ASSESSMENT_QUESTIONS.forEach((question, index) => {
+        const decodedQuestion = decodeHTMLEntities(question);
+        const questionLines = wrapText(`${index + 1}. ${decodedQuestion}`, contentWidth, regularFont, 11);
+        questionLines.forEach(line => {
+          drawLine({ text: line, x: 60, font: regularFont, size: 11, lineHeight: 16 });
+        });
+
+        const answer = snapshot.answers[index];
+        const color = answerColors[answer] || rgb(128 / 255, 128 / 255, 128 / 255);
+        drawLine({
+          text: `Answer: ${answer.toUpperCase()}`,
+          x: 80,
+          font: boldFont,
+          size: 11,
+          color,
+          lineHeight: 16
+        });
+
+        yOffset += 6;
+      });
+
+      currentPage = addPageWithTemplate();
+      yOffset = topMargin;
+
+      drawLine({ text: 'Risk Analysis & Recommendations:', font: boldFont, size: 14, lineHeight: 24 });
+      drawParagraph(`Risk Level: ${snapshot.riskLevelText}`, { font: regularFont, size: 12 });
+
+      yOffset += 10;
+      drawParagraph(snapshot.detailsText, { font: regularFont, size: 12 });
+
+      yOffset += 10;
+      drawLine({ text: 'Recommended Next Steps:', font: boldFont, size: 12, lineHeight: 22 });
+      drawParagraph(snapshot.recsText, { font: regularFont, size: 12 });
+
+      const pdfBytes = await pdfDoc.save();
+
+      latestPdfBytesCache = pdfBytes;
+      latestPdfSignature = signature;
+
+      return { pdfBytes, signature };
     };
 
-    const uploadAssessmentPdf = async ({ participant, riskLevelText, pdfBase64, answersBreakdown }) => {
-      const endpoint = '/api/upload-assessment-report';
+    checkFormCompletion();
+
+    const uploadPdfAndGetLink = async (pdfBytes, filename) => {
+      const formData = new FormData();
+      formData.append('file', new Blob([pdfBytes], { type: 'application/pdf' }), filename);
 
       try {
-        const response = await fetch(endpoint, {
+        const response = await fetch(BACKEND_PDF_UPLOAD_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            participant,
-            riskLevel: riskLevelText,
-            pdfBase64,
-            answers: answersBreakdown,
-            filename: 'Golf-Club-Security-Assessment-Results.pdf'
-          })
+          body: formData
         });
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => '');
-          console.error('Failed to upload assessment PDF', response.status, errorText);
+          console.error('PDF upload failed', errorText || `Status ${response.status}`);
+          return null;
         }
+
+        const data = await response.json().catch(() => null);
+        if (!data || typeof data.pdf_url !== 'string' || !data.pdf_url) {
+          console.error('PDF upload response missing pdf_url', data);
+          return null;
+        }
+
+        return data.pdf_url;
       } catch (error) {
-        console.error('Error uploading assessment PDF', error);
+        console.error('Error uploading PDF', error);
+        return null;
+      }
+    };
+
+    const sanitizeSubmissionField = value => (typeof value === 'string' ? value.trim() : '');
+
+    const sendToHubSpot = async (participant, riskLevelText, pdfPayload) => {
+      if (!participant || !pdfPayload || !pdfPayload.pdfBytes || !pdfPayload.pdfBytes.length) {
+        console.warn('HubSpot submission skipped: Missing required payload data.');
+        return;
+      }
+
+      const fileName = pdfPayload.fileName || RESULTS_PDF_FILE_NAME;
+      const pdfUrl = await uploadPdfAndGetLink(pdfPayload.pdfBytes, fileName);
+
+      if (!pdfUrl) {
+        console.warn('HubSpot submission skipped: Unable to obtain PDF link.');
+        return;
+      }
+
+      const submissionData = new FormData();
+      submissionData.append('first_name', sanitizeSubmissionField(participant.firstName));
+      submissionData.append('last_name', sanitizeSubmissionField(participant.lastName));
+      submissionData.append('email', sanitizeSubmissionField(participant.email));
+      submissionData.append('club_name', sanitizeSubmissionField(participant.name));
+      submissionData.append('risk_level', sanitizeSubmissionField(riskLevelText));
+      submissionData.append('assessment_pdf_link', pdfUrl);
+
+      try {
+        const response = await fetch(BACKEND_HUBSPOT_SUBMIT_URL, {
+          method: 'POST',
+          body: submissionData
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          console.error('Backend HubSpot submission failed', errorText || `Status ${response.status}`);
+          return false;
+        }
+
+        console.log('HubSpot submission succeeded via backend.');
+        return true;
+      } catch (err) {
+        console.error('Error submitting assessment results to backend', err);
+        return false;
       }
     };
 
@@ -296,11 +615,30 @@
 
       const formData = new FormData(assessmentForm);
 
+      const totalQuestions = ASSESSMENT_QUESTIONS.length;
       let yesCount = 0;
       let noCount = 0;
       let unsureCount = 0;
       let naCount = 0;
-      const totalQuestions = 13;
+
+      for (let i = 1; i <= totalQuestions; i += 1) {
+        const radios = document.getElementsByName(`q${i}`);
+        const container = radios[0]?.closest('.question');
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+
+        if (!selected) {
+          if (container) {
+            container.style.border = '2px solid #dc3545';
+          }
+          alert(`Please answer Question ${i} before submitting.`);
+          return;
+        }
+
+        if (container) {
+          container.style.border = '4px solid #28a745';
+        }
+      }
+
       let answeredQuestions = 0;
       let applicableQuestions = 0;
 
@@ -452,279 +790,49 @@
         resultsContainer.scrollIntoView({ behavior: 'smooth' });
       }
 
-      const participant = captureParticipant();
-      const riskLevelText = riskLevel;
-      await sendToHubSpot(participant, riskLevelText);
+      try {
+        const participant = captureParticipant();
+        if (participant.firstName && participant.lastName && participant.email && participant.name) {
+          const riskLevelText = decodeHTMLEntities(
+            riskLevelEl ? riskLevelEl.innerText.trim() : riskLevel
+          );
+
+          try {
+            const pdfPayload = await preparePdfPayload(participant, riskLevelText);
+            await sendToHubSpot(participant, riskLevelText, pdfPayload);
+          } catch (pdfError) {
+            console.error('Error preparing assessment PDF for HubSpot submission', pdfError);
+          }
+        } else {
+          console.warn('Participant information incomplete; skipping HubSpot submission.');
+        }
+      } catch (err) {
+        console.error('Error sending assessment results to HubSpot', err);
+      }
     };
 
     const saveToPDF = async () => {
       try {
-        const participant = captureParticipant();
         const riskLevelEl = document.getElementById('riskLevel');
         if (!riskLevelEl || !riskLevelEl.innerText.trim()) {
           alert('Please calculate your risk assessment before downloading the PDF.');
           return;
         }
 
-        const riskLevelText = riskLevelEl.innerText.trim();
+        const participant = captureParticipant();
+        const riskLevelText = decodeHTMLEntities(riskLevelEl.innerText.trim());
+        const pdfPayload = await preparePdfPayload(participant, riskLevelText);
 
-        const questions = [
-          'Do you process credit cards anywhere in your club (pro shop, restaurant, beverage carts, etc.)?',
-          'Are you PCI DSS compliant across all payment locations?',
-          'Are your data backups tested monthly, encrypted, and stored both onsite and offsite with at least one air-gapped copy?',
-          'Do you have a tested plan for getting back online quickly if ransomware locks all your systems?',
-          'Is your network properly segmented with firewalls separating member systems, staff systems, and guest WiFi?',
-          'Are all your servers, workstations, and network equipment under warranty with a documented hardware refresh cycle?',
-          'Is access removed immediately when employees leave?',
-          'Do you audit user access quarterly and remove unnecessary permissions?',
-          'Do you have documented policies for member data collection, storage, and privacy rights?',
-          'Do you have 24/7 security monitoring with immediate threat response?',
-          'Do all staff receive annual cybersecurity training with simulated phishing tests?',
-          'Do you have redundant internet connections that automatically switch during outages?',
-          'Do you have a disaster response team with clear roles and communication protocols?'
-        ];
-
-        const answers = [];
-        let yesCount = 0;
-        let noCount = 0;
-        let unsureCount = 0;
-        let naCount = 0;
-
-        for (let i = 1; i <= questions.length; i += 1) {
-          const selected = document.querySelector(`input[name="q${i}"]:checked`);
-          if (selected) {
-            answers.push(selected.value);
-            if (selected.value === 'yes') yesCount += 1;
-            else if (selected.value === 'no') noCount += 1;
-            else if (selected.value === 'unsure') unsureCount += 1;
-            else if (selected.value === 'na') naCount += 1;
-          } else {
-            answers.push('Not Answered');
-          }
+        if (!pdfPayload.pdfBytes || !pdfPayload.pdfBytes.length) {
+          throw new Error('PDF data unavailable.');
         }
 
-        const riskClass = riskLevelEl.className.replace('risk-level', '').trim();
-        const detailsElement = document.getElementById('riskDetails');
-        const recommendationsElement = document.getElementById('recommendations');
-        const detailsText = detailsElement ? detailsElement.innerText : '';
-        const recsText = recommendationsElement ? recommendationsElement.innerText : '';
-        const today = new Date().toLocaleDateString();
-
-        const { PDFDocument, rgb, StandardFonts } = window.PDFLib || {};
-        if (!PDFDocument || !rgb || !StandardFonts) {
-          throw new Error('PDFLib failed to load.');
-        }
-
-        const pdfDoc = await PDFDocument.create();
-
-        const templateResult = await loadPdfTemplate(pdfDoc);
-        let templateBackground = null;
-        let pageWidth = 612; // Default US Letter width in points
-        let pageHeight = 792; // Default US Letter height in points
-
-        if (templateResult) {
-          templateBackground = templateResult.background;
-          pageWidth = templateResult.width || pageWidth;
-          pageHeight = templateResult.height || pageHeight;
-        } else {
-          console.warn('Falling back to default PDF template layout.');
-        }
-
-        const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-        const topMarginFirstPage = templateBackground ? 140 : 72;
-        const topMargin = templateBackground ? 70 : 60;
-        const bottomMargin = 50;
-        const contentWidth = pageWidth - 120;
-
-        const addPageWithTemplate = () => {
-          const page = pdfDoc.addPage([pageWidth, pageHeight]);
-          if (templateBackground) {
-            page.drawPage(templateBackground, {
-              x: 0,
-              y: 0,
-              width: pageWidth,
-              height: pageHeight
-            });
-          } else {
-            page.drawRectangle({
-              x: 36,
-              y: 36,
-              width: pageWidth - 72,
-              height: pageHeight - 72,
-              borderColor: rgb(0.8, 0.8, 0.8),
-              borderWidth: 1
-            });
-          }
-          return page;
-        };
-
-        let currentPage = addPageWithTemplate();
-        let yOffset = topMarginFirstPage;
-
-        const riskColors = {
-          'risk-low': rgb(0, 128 / 255, 0),
-          'risk-medium': rgb(204 / 255, 140 / 255, 0),
-          'risk-high': rgb(204 / 255, 51 / 255, 51 / 255),
-          'risk-critical': rgb(153 / 255, 0, 0)
-        };
-
-        const answerColors = {
-          yes: rgb(0, 128 / 255, 0),
-          no: rgb(1, 0, 0),
-          unsure: rgb(128 / 255, 128 / 255, 128 / 255),
-          na: rgb(23 / 255, 162 / 255, 184 / 255)
-        };
-
-        const ensureSpace = (lineHeight = 18) => {
-          if (yOffset + lineHeight > pageHeight - bottomMargin) {
-            currentPage = addPageWithTemplate();
-            yOffset = topMargin;
-          }
-        };
-
-        const drawLine = ({ text, x = 60, font = regularFont, size = 12, color = rgb(0, 0, 0), lineHeight = 18 }) => {
-          ensureSpace(lineHeight);
-          currentPage.drawText(text, {
-            x,
-            y: pageHeight - yOffset,
-            size,
-            font,
-            color
-          });
-          yOffset += lineHeight;
-        };
-
-        const drawCentered = ({ text, font = boldFont, size = 16, color = rgb(0, 0, 0), lineHeight = 24 }) => {
-          ensureSpace(lineHeight);
-          const textWidth = font.widthOfTextAtSize(text, size);
-          const x = (pageWidth - textWidth) / 2;
-          currentPage.drawText(text, {
-            x,
-            y: pageHeight - yOffset,
-            size,
-            font,
-            color
-          });
-          yOffset += lineHeight;
-        };
-
-        const wrapText = (text, maxWidth, font, size) => {
-          const words = text.split(/\s+/);
-          const lines = [];
-          let currentLine = '';
-
-          words.forEach(word => {
-            const testLine = currentLine ? `${currentLine} ${word}` : word;
-            const width = font.widthOfTextAtSize(testLine, size);
-            if (width <= maxWidth) {
-              currentLine = testLine;
-            } else {
-              if (currentLine) {
-                lines.push(currentLine);
-              }
-              currentLine = word;
-            }
-          });
-
-          if (currentLine) {
-            lines.push(currentLine);
-          }
-
-          return lines;
-        };
-
-        const drawParagraph = (text, { x = 60, font = regularFont, size = 12, lineHeight = 18, color = rgb(0, 0, 0), maxWidth = contentWidth } = {}) => {
-          const paragraphs = text
-            .split(/\r?\n/)
-            .map(line => line.trim())
-            .filter(line => line.length > 0);
-
-          paragraphs.forEach((paragraph, index) => {
-            const lines = wrapText(paragraph, maxWidth, font, size);
-            lines.forEach(line => {
-              drawLine({ text: line, x, font, size, color, lineHeight });
-            });
-            if (index < paragraphs.length - 1) {
-              yOffset += lineHeight;
-            }
-          });
-        };
-
-        drawCentered({ text: 'Golf Club Cybersecurity Initial Assessment Results', size: 18 });
-        drawCentered({ text: "Pearl Solutions Group - Your Club's Digital Caddie", font: regularFont, size: 12, lineHeight: 18 });
-        drawCentered({ text: `Assessment Date: ${today}`, font: regularFont, size: 12, lineHeight: 18 });
-
-        yOffset += 10;
-        drawLine({ text: `Prepared For: ${participant.firstName} ${participant.lastName}` });
-        drawLine({ text: `Email: ${participant.email}` });
-        drawLine({ text: `Club / Organization: ${participant.name}` });
-
-        yOffset += 10;
-        drawLine({
-          text: `Risk Level: ${riskLevelText}`,
-          font: boldFont,
-          size: 16,
-          color: riskColors[riskClass] || rgb(0, 0, 0),
-          lineHeight: 24
-        });
-
-        yOffset += 10;
-        drawLine({ text: 'Initial Assessment Summary:', font: boldFont, size: 14, lineHeight: 22 });
-        drawLine({ text: `Yes Answers: ${yesCount}/${questions.length}`, x: 80 });
-        drawLine({ text: `No Answers: ${noCount}/${questions.length}`, x: 80 });
-        drawLine({ text: `Unsure Answers: ${unsureCount}/${questions.length}`, x: 80 });
-        drawLine({ text: `Not Applicable: ${naCount}/${questions.length}`, x: 80 });
-
-        currentPage = addPageWithTemplate();
-        yOffset = topMargin;
-
-        drawCentered({ text: 'Assessment Questions & Responses', size: 16 });
-        yOffset += 10;
-
-        questions.forEach((question, index) => {
-          const questionLines = wrapText(`${index + 1}. ${question}`, contentWidth, regularFont, 11);
-          questionLines.forEach(line => {
-            drawLine({ text: line, x: 60, font: regularFont, size: 11, lineHeight: 16 });
-          });
-
-          const answer = answers[index];
-          const color = answerColors[answer] || rgb(128 / 255, 128 / 255, 128 / 255);
-          drawLine({
-            text: `Answer: ${answer.toUpperCase()}`,
-            x: 80,
-            font: boldFont,
-            size: 11,
-            color,
-            lineHeight: 16
-          });
-
-          yOffset += 6;
-        });
-
-        currentPage = addPageWithTemplate();
-        yOffset = topMargin;
-
-        drawLine({ text: 'Risk Analysis & Recommendations:', font: boldFont, size: 14, lineHeight: 24 });
-        drawParagraph(`Risk Level: ${riskLevelText}`, { font: regularFont, size: 12 });
-
-        yOffset += 10;
-        drawParagraph(detailsText, { font: regularFont, size: 12 });
-
-        yOffset += 10;
-        drawLine({ text: 'Recommended Next Steps:', font: boldFont, size: 12, lineHeight: 22 });
-        drawParagraph(recsText, { font: regularFont, size: 12 });
-
-        const pdfBytes = await pdfDoc.save();
-
-
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const blob = new Blob([pdfPayload.pdfBytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
 
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'Golf-Club-Security-Assessment-Results.pdf';
+        link.download = pdfPayload.fileName || RESULTS_PDF_FILE_NAME;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -748,9 +856,9 @@
       calcBtn.disabled = true;
 
       if (!hasCalcBtnInlineHandler) {
-        calcBtn.addEventListener('click', async event => {
+        calcBtn.addEventListener('click', event => {
           event.preventDefault();
-          await calculateScore();
+          calculateScore();
         });
       }
     }
