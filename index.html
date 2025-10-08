@@ -1091,6 +1091,18 @@
                     na: rgb(23 / 255, 162 / 255, 184 / 255)
                 };
 
+                const decodeHTMLEntities = (() => {
+                    const textarea = document.createElement('textarea');
+                    return text => {
+                        if (typeof text !== 'string') {
+                            return '';
+                        }
+
+                        textarea.innerHTML = text;
+                        return textarea.value;
+                    };
+                })();
+
                 const ensureSpace = (lineHeight = 18) => {
                     if (yOffset + lineHeight > pageHeight - bottomMargin) {
                         currentPage = addPageWithTemplate();
@@ -1100,7 +1112,8 @@
 
                 const drawLine = ({ text, x = 60, font = regularFont, size = 12, color = rgb(0, 0, 0), lineHeight = 18 }) => {
                     ensureSpace(lineHeight);
-                    currentPage.drawText(text, {
+                    const content = decodeHTMLEntities(text);
+                    currentPage.drawText(content, {
                         x,
                         y: pageHeight - yOffset,
                         size,
@@ -1112,9 +1125,10 @@
 
                 const drawCentered = ({ text, font = boldFont, size = 16, color = rgb(0, 0, 0), lineHeight = 24 }) => {
                     ensureSpace(lineHeight);
-                    const textWidth = font.widthOfTextAtSize(text, size);
+                    const content = decodeHTMLEntities(text);
+                    const textWidth = font.widthOfTextAtSize(content, size);
                     const x = (pageWidth - textWidth) / 2;
-                    currentPage.drawText(text, {
+                    currentPage.drawText(content, {
                         x,
                         y: pageHeight - yOffset,
                         size,
@@ -1171,25 +1185,25 @@
                 drawCentered({ text: `Assessment Date: ${today}`, font: regularFont, size: 12, lineHeight: 18 });
 
                 yOffset += 10;
-                drawLine({ text: `Prepared For: ${participant.firstName} ${participant.lastName}` });
-                drawLine({ text: `Email: ${participant.email}` });
-                drawLine({ text: `Club / Organization: ${participant.name}` });
+                drawLine({ text: `Prepared For: ${participant.firstName} ${participant.lastName}`, lineHeight: 22 });
+                drawLine({ text: `Email: ${participant.email}`, lineHeight: 22 });
+                drawLine({ text: `Club / Organization: ${participant.name}`, lineHeight: 22 });
 
-                yOffset += 10;
+                yOffset += 16;
                 drawLine({
                     text: `Risk Level: ${riskLevelText}`,
                     font: boldFont,
                     size: 16,
                     color: riskColors[riskClass] || rgb(0, 0, 0),
-                    lineHeight: 24
+                    lineHeight: 28
                 });
 
-                yOffset += 10;
-                drawLine({ text: 'Initial Assessment Summary:', font: boldFont, size: 14, lineHeight: 22 });
-                drawLine({ text: `Yes Answers: ${yesCount}/${questions.length}`, x: 80 });
-                drawLine({ text: `No Answers: ${noCount}/${questions.length}`, x: 80 });
-                drawLine({ text: `Unsure Answers: ${unsureCount}/${questions.length}`, x: 80 });
-                drawLine({ text: `Not Applicable: ${naCount}/${questions.length}`, x: 80 });
+                yOffset += 16;
+                drawLine({ text: 'Initial Assessment Summary:', font: boldFont, size: 14, lineHeight: 24 });
+                drawLine({ text: `Yes Answers: ${yesCount}/${questions.length}`, x: 80, lineHeight: 20 });
+                drawLine({ text: `No Answers: ${noCount}/${questions.length}`, x: 80, lineHeight: 20 });
+                drawLine({ text: `Unsure Answers: ${unsureCount}/${questions.length}`, x: 80, lineHeight: 20 });
+                drawLine({ text: `Not Applicable: ${naCount}/${questions.length}`, x: 80, lineHeight: 20 });
 
                 currentPage = addPageWithTemplate();
                 yOffset = topMargin;
