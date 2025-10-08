@@ -393,7 +393,8 @@
 
       const drawLine = ({ text, x = 60, font = regularFont, size = 12, color = rgb(0, 0, 0), lineHeight = 18 }) => {
         ensureSpace(lineHeight);
-        currentPage.drawText(text, {
+        const content = decodeHTMLEntities(text);
+        currentPage.drawText(content, {
           x,
           y: pageHeight - yOffset,
           size,
@@ -405,9 +406,10 @@
 
       const drawCentered = ({ text, font = boldFont, size = 16, color = rgb(0, 0, 0), lineHeight = 24 }) => {
         ensureSpace(lineHeight);
-        const textWidth = font.widthOfTextAtSize(text, size);
+        const content = decodeHTMLEntities(text);
+        const textWidth = font.widthOfTextAtSize(content, size);
         const x = (pageWidth - textWidth) / 2;
-        currentPage.drawText(text, {
+        currentPage.drawText(content, {
           x,
           y: pageHeight - yOffset,
           size,
@@ -464,25 +466,25 @@
       drawCentered({ text: `Assessment Date: ${snapshot.today}`, font: regularFont, size: 12, lineHeight: 18 });
 
       yOffset += 10;
-      drawLine({ text: `Prepared For: ${snapshot.participant.firstName} ${snapshot.participant.lastName}` });
-      drawLine({ text: `Email: ${snapshot.participant.email}` });
-      drawLine({ text: `Club / Organization: ${snapshot.participant.name}` });
+      drawLine({ text: `Prepared For: ${snapshot.participant.firstName} ${snapshot.participant.lastName}`, lineHeight: 22 });
+      drawLine({ text: `Email: ${snapshot.participant.email}`, lineHeight: 22 });
+      drawLine({ text: `Club / Organization: ${snapshot.participant.name}`, lineHeight: 22 });
 
-      yOffset += 10;
+      yOffset += 16;
       drawLine({
         text: `Risk Level: ${snapshot.riskLevelText}`,
         font: boldFont,
         size: 16,
         color: riskColors[snapshot.riskClass] || rgb(0, 0, 0),
-        lineHeight: 24
+        lineHeight: 28
       });
 
-      yOffset += 10;
-      drawLine({ text: 'Initial Assessment Summary:', font: boldFont, size: 14, lineHeight: 22 });
-      drawLine({ text: `Yes Answers: ${snapshot.yesCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80 });
-      drawLine({ text: `No Answers: ${snapshot.noCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80 });
-      drawLine({ text: `Unsure Answers: ${snapshot.unsureCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80 });
-      drawLine({ text: `Not Applicable: ${snapshot.naCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80 });
+      yOffset += 16;
+      drawLine({ text: 'Initial Assessment Summary:', font: boldFont, size: 14, lineHeight: 24 });
+      drawLine({ text: `Yes Answers: ${snapshot.yesCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 20 });
+      drawLine({ text: `No Answers: ${snapshot.noCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 20 });
+      drawLine({ text: `Unsure Answers: ${snapshot.unsureCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 20 });
+      drawLine({ text: `Not Applicable: ${snapshot.naCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 20 });
 
       currentPage = addPageWithTemplate();
       yOffset = topMargin;
