@@ -465,12 +465,12 @@
       drawCentered({ text: "Pearl Solutions Group - Your Club's Digital Caddie", font: regularFont, size: 12, lineHeight: 18 });
       drawCentered({ text: `Assessment Date: ${snapshot.today}`, font: regularFont, size: 12, lineHeight: 18 });
 
-      yOffset += 10;
-      drawLine({ text: `Prepared For: ${snapshot.participant.firstName} ${snapshot.participant.lastName}`, lineHeight: 22 });
-      drawLine({ text: `Email: ${snapshot.participant.email}`, lineHeight: 22 });
-      drawLine({ text: `Club / Organization: ${snapshot.participant.name}`, lineHeight: 22 });
+      yOffset += 24;
+      drawLine({ text: `Prepared For: ${snapshot.participant.firstName} ${snapshot.participant.lastName}`, lineHeight: 24 });
+      drawLine({ text: `Email: ${snapshot.participant.email}`, lineHeight: 24 });
+      drawLine({ text: `Club / Organization: ${snapshot.participant.name}`, lineHeight: 24 });
 
-      yOffset += 16;
+      yOffset += 24;
       drawLine({
         text: `Risk Level: ${snapshot.riskLevelText}`,
         font: boldFont,
@@ -479,12 +479,12 @@
         lineHeight: 28
       });
 
-      yOffset += 16;
-      drawLine({ text: 'Initial Assessment Summary:', font: boldFont, size: 14, lineHeight: 24 });
-      drawLine({ text: `Yes Answers: ${snapshot.yesCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 20 });
-      drawLine({ text: `No Answers: ${snapshot.noCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 20 });
-      drawLine({ text: `Unsure Answers: ${snapshot.unsureCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 20 });
-      drawLine({ text: `Not Applicable: ${snapshot.naCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 20 });
+      yOffset += 24;
+      drawLine({ text: 'Initial Assessment Summary:', font: boldFont, size: 14, lineHeight: 26 });
+      drawLine({ text: `Yes Answers: ${snapshot.yesCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 22 });
+      drawLine({ text: `No Answers: ${snapshot.noCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 22 });
+      drawLine({ text: `Unsure Answers: ${snapshot.unsureCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 22 });
+      drawLine({ text: `Not Applicable: ${snapshot.naCount}/${ASSESSMENT_QUESTIONS.length}`, x: 80, lineHeight: 22 });
 
       currentPage = addPageWithTemplate();
       yOffset = topMargin;
