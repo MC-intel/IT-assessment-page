@@ -197,12 +197,14 @@
       const firstNameInput = document.getElementById('firstName');
       const lastNameInput = document.getElementById('lastName');
       const emailInput = document.getElementById('email');
+      const phoneInput = document.getElementById('phoneNumber');
       const clubNameInput = document.getElementById('clubname');
 
       return {
         firstName: decodeHTMLEntities(((firstNameInput && firstNameInput.value) || '').trim()),
         lastName: decodeHTMLEntities(((lastNameInput && lastNameInput.value) || '').trim()),
         email: decodeHTMLEntities(((emailInput && emailInput.value) || '').trim()),
+        phone: decodeHTMLEntities(((phoneInput && phoneInput.value) || '').trim()),
         name: decodeHTMLEntities(((clubNameInput && clubNameInput.value) || '').trim())
       };
     };
@@ -237,9 +239,10 @@
             firstName: decodeHTMLEntities((participantOverride.firstName || '').trim()),
             lastName: decodeHTMLEntities((participantOverride.lastName || '').trim()),
             email: decodeHTMLEntities((participantOverride.email || '').trim()),
+            phone: decodeHTMLEntities((participantOverride.phone || '').trim()),
             name: decodeHTMLEntities((participantOverride.name || '').trim())
-          }
-        : captureParticipant();
+        }
+      : captureParticipant();
       const riskLevelEl = document.getElementById('riskLevel');
       const riskLevelText = decodeHTMLEntities(
         (riskLevelOverride || (riskLevelEl ? riskLevelEl.innerText.trim() : ''))
@@ -585,6 +588,8 @@
       submissionData.append('first_name', sanitizeSubmissionField(participant.firstName));
       submissionData.append('last_name', sanitizeSubmissionField(participant.lastName));
       submissionData.append('email', sanitizeSubmissionField(participant.email));
+      const phoneInput = document.getElementById('phoneNumber');
+      submissionData.append('phone_number', sanitizeSubmissionField(phoneInput ? phoneInput.value : ''));
       submissionData.append('club_name', sanitizeSubmissionField(participant.name));
       submissionData.append('risk_level', sanitizeSubmissionField(riskLevelText));
       submissionData.append('assessment_pdf_link', pdfUrl);
